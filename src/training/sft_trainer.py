@@ -145,7 +145,6 @@ def run_sft(cfg: dict[str, Any], tracker=None) -> str:
         greater_is_better=t.get("greater_is_better", False),
         logging_steps=t.get("logging_steps", 10),
         seed=seed,
-        dataset_text_field="text",
         packing=False,
     )
 
