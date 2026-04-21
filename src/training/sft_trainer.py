@@ -14,7 +14,10 @@ import numpy as np
 import torch
 
 
-class GenerationLogCallback:
+from transformers import TrainerCallback
+
+
+class GenerationLogCallback(TrainerCallback):
     """
     Logs sample generations at regular step intervals so output drift is
     visible mid-run without waiting for a full evaluation pass.
