@@ -6,7 +6,7 @@ __pycache__/
 venv/
 artifacts/
 runs/
-data/
+/data/
 *.gguf
 *.safetensors
 wandb/
