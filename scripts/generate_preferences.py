@@ -157,7 +157,7 @@ def main() -> None:
         tokenizer=tokenizer,
         prompts=prompts,
         completions_per_prompt=pref_cfg["completions_per_prompt"],
-        max_new_tokens=cfg["training"].get("max_seq_length", 256),
+        max_new_tokens=cfg["training"].get("max_new_tokens", 256),
         temperature=pref_cfg.get("generation_temperature", 0.8),
     )
 
