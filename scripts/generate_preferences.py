@@ -48,20 +48,25 @@ def _load_schema(path: str) -> dict:
 
 
 def _load_sft_model(checkpoint: str, cfg: dict):
-    """Load merged SFT model for inference (BF16, no quantization)."""
+    """Load SFT LoRA adapter on top of base model for inference."""
     import torch
+    from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    print(f"Loading SFT model from: {checkpoint}")
+    base_model_name = cfg["model"]["name"]
+    print(f"Loading base model: {base_model_name}")
     tokenizer = AutoTokenizer.from_pretrained(checkpoint)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(
-        checkpoint,
+    base_model = AutoModelForCausalLM.from_pretrained(
+        base_model_name,
         device_map="auto",
         torch_dtype=torch.bfloat16,
+        trust_remote_code=cfg["model"].get("trust_remote_code", False),
     )
+    print(f"Applying LoRA adapter from: {checkpoint}")
+    model = PeftModel.from_pretrained(base_model, checkpoint)
     model.eval()
     return model, tokenizer
 
@@ -90,6 +95,19 @@ def main() -> None:
 
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
+
+    # Merge base config if defaults key present
+    if "defaults" in cfg:
+        config_dir = Path(args.config).parent
+        base_cfg = {}
+        for default in cfg.pop("defaults"):
+            base_file = config_dir / f"{default}.yaml"
+            if base_file.exists():
+                with open(base_file) as bf:
+                    base_cfg.update(yaml.safe_load(bf) or {})
+        base_cfg.update(cfg)
+        cfg = base_cfg
+
     cfg["_config_path"] = args.config
 
     pref_cfg = cfg["preference_data"]
