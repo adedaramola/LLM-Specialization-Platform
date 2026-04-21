@@ -27,7 +27,7 @@ dataset:
   train_path: "data/train.jsonl"
   val_path: "data/val.jsonl"
   test_path: "data/test.jsonl"      # FROZEN — never modified after creation
-  null_case_fraction: 0.15          # 15% null/negative examples minimum
+  null_case_fraction: 0.14          # 14% null/negative examples minimum
   split_ratios: [0.80, 0.10, 0.10]
   seed: 42
   # Provenance — fill before training begins
@@ -38,10 +38,10 @@ dataset:
 
 # Storage backend
 storage:
-  backend: "local"                  # local | s3 | hf_hub
+  backend: "s3"                     # local | s3 | hf_hub
   local_root: "./artifacts"
-  s3_bucket: null
-  s3_prefix: null
+  s3_bucket: "llm-specialization-artifacts"
+  s3_prefix: "runs/v1"
   hf_repo: null
 
 # Experiment tracking
