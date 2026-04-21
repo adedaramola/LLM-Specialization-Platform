@@ -1,0 +1,73 @@
+# Phase 2 — Direct Preference Optimization config
+
+defaults:
+  - base_config
+
+# DPO-specific
+dpo:
+  beta: 0.1                         # sweep: [0.05, 0.1, 0.2, 0.3]
+  loss_type: "sigmoid"              # standard DPO loss
+  # Pre-compute reference log-probs to avoid OOM on 24 GB cards.
+  # Loads only the policy model during training — reference model never loaded in-memory.
+  precompute_ref_log_probs: true    # set false only on A100/H100 with sufficient VRAM
+  ref_log_probs_cache: "./artifacts/dpo/ref_log_probs.pt"
+
+# Inherits LoRA config from SFT (same rank, same alpha=32)
+# Initialized from best SFT checkpoint
+lora:
+  use_qlora: true
+  rank: 32
+  alpha: 32                         # MUST match SFT — same scaling factor
+  dropout: 0.05
+  use_rslora: false
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+bnb:
+  load_in_4bit: true
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_compute_dtype: "bfloat16"
+
+# Training hyperparameters
+# LR is an order of magnitude below SFT — most common DPO misconfiguration
+training:
+  output_dir: "./artifacts/dpo"
+  sft_checkpoint: "./artifacts/sft/best"
+  num_train_epochs: 1               # 1 epoch typical; watch reward hacking
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 5.0e-7             # sweep: [5e-7, 1e-6, 5e-6]
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  max_seq_length: 2048
+  max_prompt_length: 512
+  save_strategy: "steps"
+  save_steps: 100
+  eval_strategy: "steps"
+  eval_steps: 100
+  logging_steps: 10
+
+# Preference dataset construction
+preference_data:
+  completions_per_prompt: 6         # generate 4–8 per prompt from SFT model
+  target_pairs: 2000                # 1,000–3,000 pairs; quality over quantity
+  val_fraction: 0.1
+  null_case_fraction: 0.20          # oversample null cases — high-leverage for DPO
+  preference_cache: "./artifacts/dpo/preference_dataset"
+  generation_temperature: 0.8       # must be > 0 to produce quality variation between completions
+  # Ranking strategy: deterministic (schema validator) > programmatic > llm_judge
+  ranking_strategy: "deterministic"
+  llm_judge_model: null             # only used if ranking_strategy = "llm_judge"

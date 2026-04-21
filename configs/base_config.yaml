@@ -1,0 +1,65 @@
+# Base configuration — shared across all pipeline stages
+# Override per-stage in sft_config.yaml / dpo_config.yaml
+
+pipeline_version: "1.0.0"
+
+# Task definition (Phase 0)
+task:
+  name: "json_extraction"           # or "tool_calling"
+  description: "Extract structured JSON from unstructured text"
+  input_format: "plain_text"
+  output_schema_path: "configs/schemas/extraction_schema.json"
+  null_case_label: "NO_EXTRACTION"  # sentinel for null/abstain cases
+
+# Base model
+model:
+  name: "Qwen/Qwen2.5-7B-Instruct"
+  revision: "main"
+  trust_remote_code: false
+  torch_dtype: "bfloat16"           # bf16 where supported, fp16 otherwise
+  # License: Apache 2.0 — commercial use permitted, attribution required
+  license: "apache-2.0"
+  license_restrictions: "Attribution required. No additional restrictions for commercial use."
+  attribution: "Qwen2.5 by Alibaba Cloud"
+
+# Dataset (Phase 0)
+dataset:
+  train_path: "data/train.jsonl"
+  val_path: "data/val.jsonl"
+  test_path: "data/test.jsonl"      # FROZEN — never modified after creation
+  null_case_fraction: 0.15          # 15% null/negative examples minimum
+  split_ratios: [0.80, 0.10, 0.10]
+  seed: 42
+  # Provenance — fill before training begins
+  sources: []
+  licenses: []
+  synthetic_generation_model: null  # e.g. "gpt-4o" if synthetic negatives used
+  content_hash: null                # auto-filled by prepare_dataset.py
+
+# Storage backend
+storage:
+  backend: "local"                  # local | s3 | hf_hub
+  local_root: "./artifacts"
+  s3_bucket: null
+  s3_prefix: null
+  hf_repo: null
+
+# Experiment tracking
+tracking:
+  backend: "filesystem"             # filesystem | wandb | mlflow
+  disabled: false
+  project: "llm-specialization"
+  run_name: null                    # auto-generated if null
+  log_dir: "./runs"
+
+# Reproducibility
+reproducibility:
+  seed: 42
+  # Tolerance bands — a reproduction run within these bands is equivalent
+  tolerances:
+    f1: 0.015           # ±1.5%
+    exact_match: 0.015
+    schema_validity: 0.010
+    null_accuracy: 0.020
+  # Note: cuBLAS/cuDNN algorithm selection introduces residual non-determinism
+  # even with fixed seeds. Results are reproducible within tolerance, not bit-exact.

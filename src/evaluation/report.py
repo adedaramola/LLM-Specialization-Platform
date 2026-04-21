@@ -1,0 +1,193 @@
+"""
+Fills the model card template (templates/model_card.md) with actual metrics
+from metrics.json, the run manifest, and the pipeline config.
+
+All {{placeholder}} tokens in the template are replaced; any that remain
+unfilled are left as-is so the omission is visible rather than silently empty.
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+
+def _fmt(value: Any, decimals: int = 3) -> str:
+    if isinstance(value, float):
+        return f"{value:.{decimals}f}"
+    if value is None:
+        return "—"
+    return str(value)
+
+
+def _metric(metrics_data: dict, model: str, key: str, mode: str = "raw") -> str:
+    entry = metrics_data.get("models", {}).get(model, {})
+    val = entry.get(mode, {}).get(key)
+    if val is None:
+        val = entry.get("pass_fail", {}).get(key, {}).get("value")
+    return _fmt(val)
+
+
+def _delta(metrics_data: dict, model_a: str, model_b: str, key: str) -> str:
+    """Compute model_b[key] - model_a[key] in raw metrics."""
+    def _get(m):
+        return metrics_data.get("models", {}).get(m, {}).get("raw", {}).get(key)
+    a, b = _get(model_a), _get(model_b)
+    if a is None or b is None:
+        return "—"
+    return _fmt(b - a, decimals=3)
+
+
+def generate_report(
+    template_path: str,
+    metrics_json_path: str,
+    manifest_path: str | None,
+    config: dict[str, Any],
+    output_path: str,
+) -> str:
+    """
+    Fill the model card template and write the report to output_path.
+    Returns the rendered markdown string.
+    """
+    template = Path(template_path).read_text(encoding="utf-8")
+
+    with open(metrics_json_path) as f:
+        metrics_data = json.load(f)
+
+    manifest: dict[str, Any] = {}
+    if manifest_path and Path(manifest_path).exists():
+        with open(manifest_path) as f:
+            manifest = json.load(f)
+
+    hw = manifest.get("hardware", {})
+    lic = manifest.get("licensing", {})
+    ds = config.get("dataset", {})
+    lora = config.get("lora", {})
+    t = config.get("training", {})
+    dpo = config.get("dpo", {})
+    pref = config.get("preference_data", {})
+    repro = config.get("reproducibility", {})
+
+    replacements: dict[str, str] = {
+        # Header
+        "model_name": config.get("model", {}).get("name", "—").split("/")[-1] + "-specialized",
+        "base_model": config.get("model", {}).get("name", "—"),
+        "task": config.get("task", {}).get("description", config.get("task", {}).get("name", "—")),
+        "pipeline_version": config.get("pipeline_version", "—"),
+        "run_id": manifest.get("run_id", "—"),
+        "git_commit": manifest.get("git_commit", "—"),
+        # Licensing
+        "base_model_license": lic.get("license", config.get("model", {}).get("license", "—")),
+        "commercial_use": "Yes" if "apache" in str(lic.get("license", "")).lower() else "See license",
+        "attribution": lic.get("attribution", config.get("model", {}).get("attribution", "—")),
+        "restrictions": lic.get("restrictions", config.get("model", {}).get("license_restrictions", "None")) or "None",
+        "dataset_licenses": ", ".join(ds.get("licenses", [])) or "—",
+        # Dataset
+        "dataset_sources": ", ".join(ds.get("sources", [])) or "—",
+        "train_size": _fmt(manifest.get("metrics", {}).get("train_size", ds.get("train_size", "—"))),
+        "val_size": _fmt(manifest.get("metrics", {}).get("val_size", ds.get("val_size", "—"))),
+        "test_size": _fmt(manifest.get("metrics", {}).get("test_size", ds.get("test_size", "—"))),
+        "null_fraction": _fmt(ds.get("null_case_fraction", 0.15)),
+        "dataset_hash": manifest.get("dataset_hash", "—"),
+        "synthetic_generation_model": ds.get("synthetic_generation_model") or "None",
+        "ngram_n": "8",
+        # Tokenizer (from audit report if available)
+        "tokenizer_class": "AutoTokenizer",
+        "vocab_size": "—",
+        "chat_template_present": "—",
+        "added_tokens": "—",
+        "byte_fallback_chars": "—",
+        # SFT hyperparameters
+        "lora_rank": _fmt(lora.get("rank", 32)),
+        "lora_alpha": _fmt(lora.get("alpha", 32)),
+        "lora_dropout": _fmt(lora.get("dropout", 0.05)),
+        "use_rslora": str(lora.get("use_rslora", False)),
+        "target_modules": ", ".join(lora.get("target_modules", [])),
+        "sft_lr": _fmt(t.get("learning_rate", "—")),
+        "lr_scheduler": t.get("lr_scheduler_type", "cosine"),
+        "sft_epochs": _fmt(t.get("num_train_epochs", "—")),
+        "effective_batch": _fmt(
+            t.get("per_device_train_batch_size", 4) * t.get("gradient_accumulation_steps", 8)
+        ),
+        "precision": "bf16" if t.get("bf16", True) else "fp16",
+        "gradient_checkpointing": str(t.get("gradient_checkpointing", True)),
+        # DPO hyperparameters
+        "dpo_beta": _fmt(dpo.get("beta", 0.1)),
+        "dpo_lr": _fmt(t.get("learning_rate", "—")),
+        "dpo_epochs": _fmt(t.get("num_train_epochs", 1)),
+        "num_preference_pairs": _fmt(pref.get("target_pairs", "—")),
+        "null_pair_fraction": _fmt(pref.get("null_case_fraction", 0.20)),
+        "precompute_ref_log_probs": str(dpo.get("precompute_ref_log_probs", True)),
+        "ranking_strategy": pref.get("ranking_strategy", "deterministic"),
+        # Per-artifact metrics — raw
+        "base_schema_validity": _metric(metrics_data, "base", "schema_validity"),
+        "base_field_f1": _metric(metrics_data, "base", "field_f1"),
+        "base_exact_match": _metric(metrics_data, "base", "exact_match"),
+        "base_null_accuracy": _metric(metrics_data, "base", "null_accuracy"),
+        "sft_schema_validity": _metric(metrics_data, "sft", "schema_validity"),
+        "sft_field_f1": _metric(metrics_data, "sft", "field_f1"),
+        "sft_exact_match": _metric(metrics_data, "sft", "exact_match"),
+        "sft_null_accuracy": _metric(metrics_data, "sft", "null_accuracy"),
+        "sft_constrained_schema_validity": _metric(metrics_data, "sft", "schema_validity", "constrained"),
+        "sft_constrained_field_f1": _metric(metrics_data, "sft", "field_f1", "constrained"),
+        "dpo_schema_validity": _metric(metrics_data, "dpo", "schema_validity"),
+        "dpo_field_f1": _metric(metrics_data, "dpo", "field_f1"),
+        "dpo_exact_match": _metric(metrics_data, "dpo", "exact_match"),
+        "dpo_null_accuracy": _metric(metrics_data, "dpo", "null_accuracy"),
+        "dpo_constrained_schema_validity": _metric(metrics_data, "dpo", "schema_validity", "constrained"),
+        "dpo_constrained_field_f1": _metric(metrics_data, "dpo", "field_f1", "constrained"),
+        "merged_schema_validity": _metric(metrics_data, "merged_bf16", "schema_validity"),
+        "merged_field_f1": _metric(metrics_data, "merged_bf16", "field_f1"),
+        "merged_exact_match": _metric(metrics_data, "merged_bf16", "exact_match"),
+        "merged_null_accuracy": _metric(metrics_data, "merged_bf16", "null_accuracy"),
+        "gguf_q8_schema_validity": _metric(metrics_data, "gguf_q8", "schema_validity"),
+        "gguf_q8_field_f1": _metric(metrics_data, "gguf_q8", "field_f1"),
+        "gguf_q8_exact_match": _metric(metrics_data, "gguf_q8", "exact_match"),
+        "gguf_q8_null_accuracy": _metric(metrics_data, "gguf_q8", "null_accuracy"),
+        "gguf_q4_schema_validity": _metric(metrics_data, "gguf_q4k", "schema_validity"),
+        "gguf_q4_field_f1": _metric(metrics_data, "gguf_q4k", "field_f1"),
+        "gguf_q4_exact_match": _metric(metrics_data, "gguf_q4k", "exact_match"),
+        "gguf_q4_null_accuracy": _metric(metrics_data, "gguf_q4k", "null_accuracy"),
+        # Degradation deltas
+        "adapter_to_merged_f1_delta": _delta(metrics_data, "dpo", "merged_bf16", "field_f1"),
+        "adapter_to_merged_null_delta": _delta(metrics_data, "dpo", "merged_bf16", "null_accuracy"),
+        "merged_to_q8_f1_delta": _delta(metrics_data, "merged_bf16", "gguf_q8", "field_f1"),
+        "merged_to_q8_null_delta": _delta(metrics_data, "merged_bf16", "gguf_q8", "null_accuracy"),
+        "q8_to_q4_f1_delta": _delta(metrics_data, "gguf_q8", "gguf_q4k", "field_f1"),
+        "q8_to_q4_null_delta": _delta(metrics_data, "gguf_q8", "gguf_q4k", "null_accuracy"),
+        # Regression
+        "base_mmlu": _metric(metrics_data, "base", "mmlu_accuracy"),
+        "sft_mmlu": _metric(metrics_data, "sft", "mmlu_accuracy"),
+        "dpo_mmlu": _metric(metrics_data, "dpo", "mmlu_accuracy"),
+        "dpo_mmlu_delta": _delta(metrics_data, "base", "dpo", "mmlu_accuracy"),
+        "base_hellaswag": _metric(metrics_data, "base", "hellaswag_accuracy"),
+        "sft_hellaswag": _metric(metrics_data, "sft", "hellaswag_accuracy"),
+        "dpo_hellaswag": _metric(metrics_data, "dpo", "hellaswag_accuracy"),
+        "dpo_hellaswag_delta": _delta(metrics_data, "base", "dpo", "hellaswag_accuracy"),
+        # Reproducibility
+        "config_path": config.get("_config_path", "configs/sft_config.yaml"),
+        "lockfile_hash": manifest.get("lockfile_hash", "—"),
+        "seed": _fmt(repro.get("seed", 42)),
+        "f1_tolerance": _fmt(repro.get("tolerances", {}).get("f1", 0.015)),
+        "null_tolerance": _fmt(repro.get("tolerances", {}).get("null_accuracy", 0.020)),
+        "gpu_model": hw.get("gpu_model", "—"),
+        "gpu_count": _fmt(hw.get("gpu_count", "—")),
+        "nvidia_driver": hw.get("nvidia_driver", "—"),
+        "cuda_toolkit": hw.get("cuda_toolkit", "—"),
+        "pytorch_cuda": hw.get("pytorch_cuda", "—"),
+        "cudnn_version": hw.get("cudnn_version", "—"),
+        # Inference examples
+        "hf_repo": lic.get("base_model", config.get("model", {}).get("name", "your-hf-repo")),
+        "ollama_model_tag": config.get("model", {}).get("name", "—").split("/")[-1].lower(),
+        # Limitations placeholder
+        "limitation_1": "Evaluated only on synthetic training distribution; real-world inputs may differ.",
+        "intended_use": config.get("task", {}).get("description", "Structured JSON extraction from text."),
+    }
+
+    rendered = template
+    for key, value in replacements.items():
+        rendered = rendered.replace("{{" + key + "}}", value)
+
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    Path(output_path).write_text(rendered, encoding="utf-8")
+    return rendered

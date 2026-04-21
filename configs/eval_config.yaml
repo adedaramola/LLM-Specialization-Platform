@@ -1,0 +1,95 @@
+# Phase 3 — Evaluation harness config
+
+defaults:
+  - base_config
+
+# Inference provider: hf_native | vllm | ollama | tgi
+inference:
+  provider: "hf_native"
+  # Provider-specific settings (only the active provider is used)
+  hf_native:
+    device_map: "auto"
+    torch_dtype: "bfloat16"
+  vllm:
+    host: "localhost"
+    port: 8000
+    tensor_parallel_size: 1
+  ollama:
+    host: "localhost"
+    port: 11434
+    model_tag: null                 # filled at eval time
+  tgi:
+    host: "localhost"
+    port: 8080
+
+# Generation settings
+generation:
+  max_new_tokens: 512
+  temperature: 0.0                  # greedy for evaluation consistency
+  do_sample: false
+
+# Constrained decoding
+constrained:
+  enabled: true
+  backend: "outlines"               # outlines | instructor | xgrammar
+  schema_path: "configs/schemas/extraction_schema.json"
+
+# Models to evaluate
+models:
+  base:
+    path: null                      # set to base model name/path
+    label: "base"
+  sft:
+    path: "./artifacts/sft/best"
+    label: "sft"
+  dpo:
+    path: "./artifacts/dpo/best"
+    label: "dpo"
+
+# Post-export artifact evaluation (Phase 4)
+export_artifacts:
+  adapter:
+    path: "./artifacts/export/adapter"
+    runtime: "hf_native"
+  merged_bf16:
+    path: "./artifacts/export/merged_bf16"
+    runtime: "hf_native"
+  gguf_q8:
+    path: "./artifacts/export/model_q8_0.gguf"
+    runtime: "ollama"
+  gguf_q4:
+    path: "./artifacts/export/model_q4_k_m.gguf"
+    runtime: "ollama"
+
+# Metrics and CI/CD thresholds
+metrics:
+  # Pass/fail thresholds for metrics.json CI gate
+  thresholds:
+    schema_validity: 0.90
+    field_f1: 0.80
+    exact_match: 0.70
+    null_accuracy: 0.85
+    tool_selection_accuracy: 0.85
+    call_validity: 0.80
+  # Regression: DPO must not degrade general capability beyond this delta vs base
+  regression_thresholds:
+    mmlu_delta: -0.03               # allow up to -3% MMLU vs base
+    hellaswag_delta: -0.03
+
+# General capability regression slice
+regression:
+  benchmarks: ["mmlu_tiny", "hellaswag_tiny"]
+  mmlu_subjects: ["abstract_algebra", "college_mathematics", "high_school_physics"]
+  num_samples: 100                  # small slice; catches catastrophic forgetting
+
+# Qualitative sample logging
+qualitative:
+  num_samples: 20
+  categories: ["easy", "hard", "null", "failure_mode"]
+  output_path: "./artifacts/eval/qualitative_samples.json"
+
+# metrics.json output
+output:
+  metrics_json: "./artifacts/eval/metrics.json"
+  metrics_schema_version: "1.0.0"
+  report_path: "./artifacts/eval/report.md"
