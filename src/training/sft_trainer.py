@@ -111,7 +111,7 @@ def build_qlora_model(model_cfg: dict, lora_cfg: dict, bnb_cfg: dict):
 def run_sft(cfg: dict[str, Any], tracker=None) -> str:
     """Train SFT model; returns path to best checkpoint."""
     from datasets import Dataset
-    from trl import DataCollatorForCompletionOnlyLM, SFTConfig, SFTTrainer
+    from trl import SFTConfig, SFTTrainer
 
     seed = cfg.get("reproducibility", {}).get("seed", 42)
     set_seeds(seed)
@@ -149,6 +149,7 @@ def run_sft(cfg: dict[str, Any], tracker=None) -> str:
         logging_steps=t.get("logging_steps", 10),
         seed=seed,
         packing=False,
+        report_to="none",
     )
 
     def formatting_fn(examples):

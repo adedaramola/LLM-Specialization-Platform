@@ -1,44 +1,81 @@
-# Phase 1 — Supervised Fine-Tuning config
-# Inherits base_config.yaml; values here override base.
-
-defaults:
-  - base_config
-
-# LoRA / QLoRA
+pipeline_version: 1.0.0
+task:
+  name: json_extraction
+  description: Extract structured JSON from unstructured text
+  input_format: plain_text
+  output_schema_path: configs/schemas/extraction_schema.json
+  null_case_label: NO_EXTRACTION
+model:
+  name: Qwen/Qwen2.5-7B-Instruct
+  revision: main
+  trust_remote_code: false
+  torch_dtype: bfloat16
+  license: apache-2.0
+  license_restrictions: Attribution required. No additional restrictions for commercial
+    use.
+  attribution: Qwen2.5 by Alibaba Cloud
+dataset:
+  train_path: data/train.jsonl
+  val_path: data/val.jsonl
+  test_path: data/test.jsonl
+  null_case_fraction: 0.14
+  split_ratios:
+  - 0.8
+  - 0.1
+  - 0.1
+  seed: 42
+  sources: []
+  licenses: []
+  synthetic_generation_model: null
+  content_hash: 75a2e33c27e833551c5dcc60fcefbdbfc78dffcc90983172bcc722a940d54346
+storage:
+  backend: local
+  local_root: ./artifacts
+  s3_bucket: null
+  s3_prefix: null
+  hf_repo: null
+tracking:
+  backend: filesystem
+  disabled: false
+  project: llm-specialization
+  run_name: null
+  log_dir: ./runs
+reproducibility:
+  seed: 42
+  tolerances:
+    f1: 0.015
+    exact_match: 0.015
+    schema_validity: 0.01
+    null_accuracy: 0.02
 lora:
-  use_qlora: true                   # QLoRA default for 24 GB cards
-  rank: 32                          # sweep: [16, 32, 64]
-  alpha: 32                         # FIXED across all rank experiments — do not change between runs
+  use_qlora: true
+  rank: 32
+  alpha: 32
   dropout: 0.05
-  # rsLoRA: false — using standard α/r scaling, not α/√r
   use_rslora: false
   target_modules:
-    - q_proj
-    - k_proj
-    - v_proj
-    - o_proj
-    - gate_proj
-    - up_proj
-    - down_proj
-  bias: "none"
-  task_type: "CAUSAL_LM"
-
-# QLoRA quantization
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+  - gate_proj
+  - up_proj
+  - down_proj
+  bias: none
+  task_type: CAUSAL_LM
 bnb:
   load_in_4bit: true
-  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_quant_type: nf4
   bnb_4bit_use_double_quant: true
-  bnb_4bit_compute_dtype: "bfloat16"
-
-# Training hyperparameters (community defaults — treat as sweep starting points)
+  bnb_4bit_compute_dtype: bfloat16
 training:
-  output_dir: "./artifacts/sft"
-  num_train_epochs: 2               # sweep: [1, 2, 3]
+  output_dir: ./artifacts/sft
+  num_train_epochs: 2
   per_device_train_batch_size: 4
   per_device_eval_batch_size: 4
-  gradient_accumulation_steps: 8    # effective batch = 32
-  learning_rate: 1.0e-4             # sweep: [1e-4, 2e-4]
-  lr_scheduler_type: "cosine"
+  gradient_accumulation_steps: 8
+  learning_rate: 0.0001
+  lr_scheduler_type: cosine
   warmup_ratio: 0.03
   weight_decay: 0.0
   max_grad_norm: 1.0
@@ -47,21 +84,18 @@ training:
   gradient_checkpointing: true
   dataloader_num_workers: 4
   max_seq_length: 2048
-  # Checkpoint every N steps; best checkpoint (not last) promoted to Phase 2
-  save_strategy: "steps"
+  save_strategy: steps
   save_steps: 200
-  eval_strategy: "steps"
+  eval_strategy: steps
   eval_steps: 200
   load_best_model_at_end: true
-  metric_for_best_model: "eval_f1"
-  greater_is_better: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
   logging_steps: 10
-  # Sample generations logged every N steps for drift monitoring
   generation_log_steps: 100
   generation_log_samples: 4
-
-# Multi-GPU (accelerate)
 accelerate:
-  num_processes: 1                  # set >1 for multi-GPU
-  mixed_precision: "bf16"
+  num_processes: 1
+  mixed_precision: bf16
   fsdp: false
+_config_path: configs/sft_config.yaml
