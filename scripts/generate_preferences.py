@@ -164,15 +164,16 @@ def main() -> None:
         batch_size=pref_cfg.get("generation_batch_size", 8),
     )
 
-    pairs = build_preference_pairs(sampled, all_completions, schema)
+    pairs = build_preference_pairs(
+        sampled, all_completions, schema,
+        seed=cfg.get("reproducibility", {}).get("seed", 42),
+    )
     print(f"Built {len(pairs)} preference pairs from {len(sampled)} prompts")
 
     validate_preference_dataset(
         pairs,
         target_pairs=pref_cfg["target_pairs"],
-        null_case_fraction=cfg.get("reproducibility", {}).get(
-            "tolerances", {}
-        ).get("null_accuracy", 0.10),
+        null_case_fraction=pref_cfg["null_case_fraction"],
     )
 
     # Split into train/val

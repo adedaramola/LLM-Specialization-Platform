@@ -80,20 +80,26 @@ def build_preference_pairs(
     examples: list[dict],
     all_completions: list[list[str]],
     schema: dict,
+    seed: int = 42,
 ) -> list[dict]:
     """
     Build (chosen, rejected) pairs from multiple completions per prompt.
 
-    Scores each completion against the ground truth using entity-level F1
-    so that completions extracting different subsets of entities receive
-    different scores, enabling pair construction even from a well-trained model.
-    Pairs are only emitted when at least two completions have different scores.
+    For positive prompts: scores via entity-level F1 to create differentials.
+    For null prompts where the SFT model is uniformly correct (all completions
+    correctly abstain): synthesizes a pair using a real positive-case completion
+    as the rejected response — a hallucinated extraction on a null prompt is the
+    exact failure mode DPO is being used to suppress. These are marked
+    synthetic_rejected=True in the output for transparency.
     """
+    rng = random.Random(seed)
     pairs: list[dict] = []
+    unpaired_null_cases: list[tuple[dict, str, float]] = []
+    positive_completions: list[str] = []
+
     for example, completions in zip(examples, all_completions):
         is_null = example.get("is_null_case", False)
 
-        # Extract ground truth and include it as a candidate
         ref_completion = example.get("completion", "")
         ref_obj, ref_ok = _parse_json_safe(ref_completion)
         reference_entities = ref_obj.get("entities", []) if ref_ok else None
@@ -106,6 +112,7 @@ def build_preference_pairs(
         scored.sort(key=lambda x: x[1], reverse=True)
 
         best_text, best_score = scored[0]
+        pair_built = False
         for worst_text, worst_score in reversed(scored):
             if worst_score < best_score:
                 pairs.append({
@@ -115,8 +122,44 @@ def build_preference_pairs(
                     "is_null_case": is_null,
                     "chosen_score": best_score,
                     "rejected_score": worst_score,
+                    "synthetic_rejected": False,
                 })
+                pair_built = True
                 break
+
+        # Null prompts where model is uniformly correct produce no score differential.
+        # Queue them for synthetic pair construction after the main loop, once we have
+        # a pool of real positive-case completions to use as realistic rejected responses.
+        if not pair_built and is_null and best_score >= 2.0:
+            unpaired_null_cases.append((example, best_text, best_score))
+
+        # Collect schema-valid, non-null extractions from positive prompts as a
+        # rejection pool for the synthetic null pairs above.
+        if not is_null:
+            for c in completions:
+                obj, ok = _parse_json_safe(c)
+                if ok and not obj.get("null_extraction", False):
+                    try:
+                        jsonschema.validate(obj, schema)
+                        positive_completions.append(c)
+                    except jsonschema.ValidationError:
+                        pass
+
+    # Build synthetic null-case pairs: chosen=correct abstention, rejected=hallucinated extraction.
+    fallback_rejected = json.dumps(
+        {"entities": [{"name": "Unknown Entity", "type": "ORG"}], "null_extraction": False}
+    )
+    for example, chosen_text, chosen_score in unpaired_null_cases:
+        rejected_text = rng.choice(positive_completions) if positive_completions else fallback_rejected
+        pairs.append({
+            "prompt": example["prompt"],
+            "chosen": chosen_text,
+            "rejected": rejected_text,
+            "is_null_case": True,
+            "chosen_score": chosen_score,
+            "rejected_score": 2.0,
+            "synthetic_rejected": True,
+        })
 
     return pairs
 
