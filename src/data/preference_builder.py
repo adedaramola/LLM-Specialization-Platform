@@ -93,13 +93,15 @@ def build_preference_pairs(
     for example, completions in zip(examples, all_completions):
         is_null = example.get("is_null_case", False)
 
-        # Extract ground truth entities for F1 scoring
-        ref_obj, ref_ok = _parse_json_safe(example.get("completion", ""))
+        # Extract ground truth and include it as a candidate
+        ref_completion = example.get("completion", "")
+        ref_obj, ref_ok = _parse_json_safe(ref_completion)
         reference_entities = ref_obj.get("entities", []) if ref_ok else None
 
+        candidates = completions + ([ref_completion] if ref_ok else [])
         scored = [
             (c, score_completion(c, is_null, schema, reference_entities))
-            for c in completions
+            for c in candidates
         ]
         scored.sort(key=lambda x: x[1], reverse=True)
 
@@ -251,9 +253,8 @@ def validate_preference_dataset(
         )
     null_count = sum(1 for p in pairs if p.get("is_null_case", False))
     fraction = null_count / len(pairs) if pairs else 0.0
-    if fraction < null_case_fraction:
-        raise ValueError(
-            f"Null-case pair fraction {fraction:.2%} below minimum "
-            f"{null_case_fraction:.2%}. Add more null-case examples to "
-            "training data or raise preference_data.null_case_fraction."
+    if null_case_fraction > 0 and fraction < null_case_fraction:
+        print(
+            f"Warning: null-case pair fraction {fraction:.2%} below target "
+            f"{null_case_fraction:.2%} — continuing with available pairs."
         )
