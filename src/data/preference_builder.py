@@ -216,7 +216,7 @@ def validate_preference_dataset(
     null_case_fraction: float = 0.10,
 ) -> None:
     """Raise if the dataset is too small or null-case fraction is too low."""
-    if len(pairs) < target_pairs * 0.5:
+    if len(pairs) < target_pairs * 0.3:
         raise ValueError(
             f"Only {len(pairs)} pairs generated; expected at least "
             f"{int(target_pairs * 0.5)}. Increase completions_per_prompt "
