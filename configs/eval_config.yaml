@@ -24,9 +24,10 @@ inference:
 
 # Generation settings
 generation:
-  max_new_tokens: 512
+  max_new_tokens: 128
   temperature: 0.0                  # greedy for evaluation consistency
   do_sample: false
+  batch_size: 8
 
 # Constrained decoding
 constrained:
