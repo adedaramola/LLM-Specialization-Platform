@@ -134,19 +134,34 @@ def generate_completions_batch(
     completions_per_prompt: int,
     max_new_tokens: int = 256,
     temperature: float = 0.8,
+    batch_size: int = 8,
 ) -> list[list[str]]:
     """
     Generate `completions_per_prompt` diverse outputs for each prompt.
-    Uses temperature sampling (not greedy) to produce quality variation.
+
+    Processes prompts in batches (left-padded) to keep the GPU saturated.
+    Uses temperature sampling to produce quality variation across completions.
     """
     import torch
 
+    # Left-padding required for batched generation with decoder-only models
+    original_padding_side = tokenizer.padding_side
+    tokenizer.padding_side = "left"
+
     results: list[list[str]] = []
     total = len(prompts)
-    for i, prompt in enumerate(prompts):
-        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-        prompt_len = inputs["input_ids"].shape[1]
-        completions: list[str] = []
+
+    for batch_start in range(0, total, batch_size):
+        batch_prompts = prompts[batch_start: batch_start + batch_size]
+
+        inputs = tokenizer(
+            batch_prompts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+        ).to(model.device)
+
+        padded_len = inputs["input_ids"].shape[1]
 
         with torch.no_grad():
             output_ids = model.generate(
@@ -158,16 +173,22 @@ def generate_completions_batch(
                 pad_token_id=tokenizer.eos_token_id,
             )
 
-        for seq in output_ids:
-            new_tokens = seq[prompt_len:]
-            completions.append(
-                tokenizer.decode(new_tokens, skip_special_tokens=True)
-            )
-        results.append(completions)
+        # output_ids: [batch * completions_per_prompt, padded_len + new_tokens]
+        for b, _ in enumerate(batch_prompts):
+            completions: list[str] = []
+            for n in range(completions_per_prompt):
+                seq = output_ids[b * completions_per_prompt + n]
+                new_tokens = seq[padded_len:]
+                completions.append(
+                    tokenizer.decode(new_tokens, skip_special_tokens=True)
+                )
+            results.append(completions)
 
-        if (i + 1) % 100 == 0 or (i + 1) == total:
-            print(f"  Generated {i + 1}/{total} prompts", flush=True)
+        done = min(batch_start + batch_size, total)
+        if done % 100 == 0 or done == total:
+            print(f"  Generated {done}/{total} prompts", flush=True)
 
+    tokenizer.padding_side = original_padding_side
     return results
 
 

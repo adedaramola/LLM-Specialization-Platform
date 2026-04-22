@@ -67,6 +67,8 @@ def _load_sft_model(checkpoint: str, cfg: dict):
     )
     print(f"Applying LoRA adapter from: {checkpoint}")
     model = PeftModel.from_pretrained(base_model, checkpoint)
+    print("Merging LoRA adapters into base model for faster inference...")
+    model = model.merge_and_unload()
     model.eval()
     return model, tokenizer
 
@@ -159,6 +161,7 @@ def main() -> None:
         completions_per_prompt=pref_cfg["completions_per_prompt"],
         max_new_tokens=cfg["training"].get("max_new_tokens", 256),
         temperature=pref_cfg.get("generation_temperature", 0.8),
+        batch_size=pref_cfg.get("generation_batch_size", 8),
     )
 
     pairs = build_preference_pairs(sampled, all_completions, schema)
