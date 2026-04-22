@@ -102,6 +102,7 @@ def run_dpo(cfg: dict[str, Any], tracker=None) -> str:
         loss_type=dpo_cfg.get("loss_type", "sigmoid"),
         precompute_ref_log_probs=dpo_cfg.get("precompute_ref_log_probs", True),
         seed=seed,
+        report_to="none",
     )
 
     ref_model = None
