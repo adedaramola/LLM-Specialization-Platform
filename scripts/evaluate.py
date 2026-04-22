@@ -29,6 +29,17 @@ def main():
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
 
+    if "defaults" in cfg:
+        config_dir = Path(args.config).parent
+        base_cfg = {}
+        for default in cfg.pop("defaults"):
+            base_file = config_dir / f"{default}.yaml"
+            if base_file.exists():
+                with open(base_file) as bf:
+                    base_cfg.update(yaml.safe_load(bf) or {})
+        base_cfg.update(cfg)
+        cfg = base_cfg
+
     schema_path = cfg["constrained"]["schema_path"]
     with open(schema_path) as f:
         schema = json.load(f)
