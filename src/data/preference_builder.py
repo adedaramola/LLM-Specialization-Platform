@@ -142,7 +142,8 @@ def generate_completions_batch(
     import torch
 
     results: list[list[str]] = []
-    for prompt in prompts:
+    total = len(prompts)
+    for i, prompt in enumerate(prompts):
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
         prompt_len = inputs["input_ids"].shape[1]
         completions: list[str] = []
@@ -163,6 +164,9 @@ def generate_completions_batch(
                 tokenizer.decode(new_tokens, skip_special_tokens=True)
             )
         results.append(completions)
+
+        if (i + 1) % 100 == 0 or (i + 1) == total:
+            print(f"  Generated {i + 1}/{total} prompts", flush=True)
 
     return results
 
