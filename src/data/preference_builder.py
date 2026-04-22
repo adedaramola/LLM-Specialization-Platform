@@ -134,13 +134,16 @@ def generate_completions_batch(
     completions_per_prompt: int,
     max_new_tokens: int = 256,
     temperature: float = 0.8,
-    batch_size: int = 8,
+    batch_size: int = 4,
 ) -> list[list[str]]:
     """
     Generate `completions_per_prompt` diverse outputs for each prompt.
 
-    Processes prompts in batches (left-padded) to keep the GPU saturated.
-    Uses temperature sampling to produce quality variation across completions.
+    Each prompt is repeated `completions_per_prompt` times in the batch so
+    temperature sampling produces diverse outputs with num_return_sequences=1.
+    This avoids HF's known limitation with num_return_sequences > 1 + batch > 1.
+    Prompts are processed in groups of `batch_size` (GPU batch = batch_size *
+    completions_per_prompt sequences).
     """
     import torch
 
@@ -154,8 +157,11 @@ def generate_completions_batch(
     for batch_start in range(0, total, batch_size):
         batch_prompts = prompts[batch_start: batch_start + batch_size]
 
+        # Expand: [p0, p1, p2, p3] → [p0,p0,...,p0, p1,p1,...,p1, ...]
+        expanded = [p for p in batch_prompts for _ in range(completions_per_prompt)]
+
         inputs = tokenizer(
-            batch_prompts,
+            expanded,
             return_tensors="pt",
             padding=True,
             truncation=True,
@@ -169,12 +175,12 @@ def generate_completions_batch(
                 max_new_tokens=max_new_tokens,
                 do_sample=True,
                 temperature=temperature,
-                num_return_sequences=completions_per_prompt,
+                num_return_sequences=1,
                 pad_token_id=tokenizer.eos_token_id,
             )
 
-        # output_ids: [batch * completions_per_prompt, padded_len + new_tokens]
-        for b, _ in enumerate(batch_prompts):
+        # output_ids: [batch_size * completions_per_prompt, padded_len + new_tokens]
+        for b in range(len(batch_prompts)):
             completions: list[str] = []
             for n in range(completions_per_prompt):
                 seq = output_ids[b * completions_per_prompt + n]
