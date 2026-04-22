@@ -22,6 +22,18 @@ def main():
 
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
+
+    if "defaults" in cfg:
+        config_dir = Path(args.config).parent
+        base_cfg = {}
+        for default in cfg.pop("defaults"):
+            base_file = config_dir / f"{default}.yaml"
+            if base_file.exists():
+                with open(base_file) as bf:
+                    base_cfg.update(yaml.safe_load(bf) or {})
+        base_cfg.update(cfg)
+        cfg = base_cfg
+
     cfg["_config_path"] = args.config
 
     tracker = build_tracker(cfg.get("tracking", {}))
@@ -38,9 +50,13 @@ def main():
         )
         print(f"Ref log-probs cached at: {cfg['dpo']['ref_log_probs_cache']}")
 
+    pref_cache = cfg["preference_data"]["preference_cache"]
     manifest = create_manifest(
         config=cfg,
-        dataset_paths=[cfg["dataset"]["train_path"]],
+        dataset_paths=[
+            str(Path(pref_cache) / "preference_pairs.jsonl"),
+            str(Path(pref_cache) / "preference_pairs_val.jsonl"),
+        ],
     )
 
     best_checkpoint = run_dpo(cfg, tracker=tracker)
