@@ -67,7 +67,7 @@ preference_data:
   val_fraction: 0.1
   null_case_fraction: 0.20          # oversample null cases — high-leverage for DPO
   preference_cache: "./artifacts/dpo/preference_dataset"
-  generation_temperature: 1.2       # raised from 0.8: model too consistent at lower temps
+  generation_temperature: 0.8
   # Ranking strategy: deterministic (schema validator) > programmatic > llm_judge
   ranking_strategy: "deterministic"
   llm_judge_model: null             # only used if ranking_strategy = "llm_judge"

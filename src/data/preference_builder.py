@@ -30,14 +30,20 @@ def score_completion(
     completion_str: str,
     is_null_prompt: bool,
     schema: dict,
+    reference_entities: list | None = None,
 ) -> float:
     """
-    Deterministic rubric for JSON extraction completions. Returns 0.0–3.0.
+    Deterministic rubric for JSON extraction completions. Returns 0.0–4.0.
 
     Points:
       +1.0  parseable JSON
-      +1.0  passes schema validation
+      +1.0  passes schema validation (or +0.5 if schema-invalid)
       +1.0  correct null/non-null prediction
+      +1.0  entity-level F1 against ground truth (continuous 0–1, positive cases only)
+
+    The entity F1 component creates continuous score variation between completions
+    that are otherwise all schema-valid and null-correct, enabling pair construction
+    from a well-trained SFT model.
     """
     obj, ok = _parse_json_safe(completion_str)
     if not ok:
@@ -47,12 +53,27 @@ def score_completion(
         jsonschema.validate(obj, schema)
         schema_score = 1.0
     except jsonschema.ValidationError:
-        schema_score = 0.5  # parseable but schema-invalid
+        schema_score = 0.5
 
     pred_null = isinstance(obj, dict) and obj.get("null_extraction", False)
     null_score = 1.0 if (pred_null == is_null_prompt) else 0.0
 
-    return 1.0 + schema_score + null_score  # always get +1 for parseable JSON
+    base = 1.0 + schema_score + null_score
+
+    # Entity-level F1 against ground truth for positive cases
+    if reference_entities is not None and not is_null_prompt and null_score == 1.0:
+        pred_names = {e.get("name", "").lower().strip() for e in obj.get("entities", [])}
+        true_names = {e.get("name", "").lower().strip() for e in reference_entities if e.get("name")}
+        if true_names:
+            tp = len(pred_names & true_names)
+            precision = tp / len(pred_names) if pred_names else 0.0
+            recall = tp / len(true_names)
+            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+        else:
+            f1 = 1.0
+        return base + f1  # 0.0–4.0
+
+    return base  # 0.0–3.0
 
 
 def build_preference_pairs(
@@ -63,20 +84,26 @@ def build_preference_pairs(
     """
     Build (chosen, rejected) pairs from multiple completions per prompt.
 
+    Scores each completion against the ground truth using entity-level F1
+    so that completions extracting different subsets of entities receive
+    different scores, enabling pair construction even from a well-trained model.
     Pairs are only emitted when at least two completions have different scores.
-    Null-case pairs are tagged for downstream oversampling validation.
     """
     pairs: list[dict] = []
     for example, completions in zip(examples, all_completions):
         is_null = example.get("is_null_case", False)
+
+        # Extract ground truth entities for F1 scoring
+        ref_obj, ref_ok = _parse_json_safe(example.get("completion", ""))
+        reference_entities = ref_obj.get("entities", []) if ref_ok else None
+
         scored = [
-            (c, score_completion(c, is_null, schema))
+            (c, score_completion(c, is_null, schema, reference_entities))
             for c in completions
         ]
         scored.sort(key=lambda x: x[1], reverse=True)
 
         best_text, best_score = scored[0]
-        # Pick the worst completion that is strictly worse than the best
         for worst_text, worst_score in reversed(scored):
             if worst_score < best_score:
                 pairs.append({
