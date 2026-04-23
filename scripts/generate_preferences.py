@@ -25,8 +25,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import yaml
-
+from src.config import load_config
 from src.data.preference_builder import (
     build_preference_pairs,
     generate_completions_batch,
@@ -95,22 +94,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    with open(args.config) as f:
-        cfg = yaml.safe_load(f)
-
-    # Merge base config if defaults key present
-    if "defaults" in cfg:
-        config_dir = Path(args.config).parent
-        base_cfg = {}
-        for default in cfg.pop("defaults"):
-            base_file = config_dir / f"{default}.yaml"
-            if base_file.exists():
-                with open(base_file) as bf:
-                    base_cfg.update(yaml.safe_load(bf) or {})
-        base_cfg.update(cfg)
-        cfg = base_cfg
-
-    cfg["_config_path"] = args.config
+    cfg = load_config(args.config)
 
     pref_cfg = cfg["preference_data"]
     sft_checkpoint = args.sft_checkpoint or cfg["training"]["sft_checkpoint"]

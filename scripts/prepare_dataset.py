@@ -9,8 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import yaml
-
+from src.config import load_config
 from src.data.dataset_builder import build_and_save_dataset
 from src.data.storage import build_storage
 from src.manifest.run_manifest import create_manifest
@@ -22,22 +21,7 @@ def main():
     parser.add_argument("--raw-data", required=True, help="Path to raw JSONL data file")
     args = parser.parse_args()
 
-    with open(args.config) as f:
-        cfg = yaml.safe_load(f)
-
-    # Merge base config if defaults key present
-    if "defaults" in cfg:
-        config_dir = Path(args.config).parent
-        base_cfg = {}
-        for default in cfg.pop("defaults"):
-            base_file = config_dir / f"{default}.yaml"
-            if base_file.exists():
-                with open(base_file) as bf:
-                    base_cfg.update(yaml.safe_load(bf) or {})
-        base_cfg.update(cfg)
-        cfg = base_cfg
-
-    cfg["_config_path"] = args.config
+    cfg = load_config(args.config)
 
     storage = build_storage(cfg["storage"])
 

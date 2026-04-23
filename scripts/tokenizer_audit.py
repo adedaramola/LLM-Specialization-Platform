@@ -9,8 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import yaml
-
+from src.config import load_config
 from src.tokenizer.audit import audit_tokenizer, save_audit_report
 
 
@@ -20,8 +19,7 @@ def main():
     parser.add_argument("--output", default="artifacts/tokenizer_audit.json")
     args = parser.parse_args()
 
-    with open(args.config) as f:
-        cfg = yaml.safe_load(f)
+    cfg = load_config(args.config)
 
     model_name = cfg["model"]["name"]
     print(f"Auditing tokenizer: {model_name}")

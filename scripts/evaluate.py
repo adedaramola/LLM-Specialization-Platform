@@ -10,8 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import yaml
-
+from src.config import load_config
 from src.evaluation.harness import build_provider, collect_qualitative_samples, evaluate_model, emit_metrics_json
 from src.evaluation.regression import run_regression, check_regression
 from src.evaluation.report import generate_report
@@ -28,19 +27,7 @@ def main():
                         help="Load existing metrics.json and merge new results into it")
     args = parser.parse_args()
 
-    with open(args.config) as f:
-        cfg = yaml.safe_load(f)
-
-    if "defaults" in cfg:
-        config_dir = Path(args.config).parent
-        base_cfg = {}
-        for default in cfg.pop("defaults"):
-            base_file = config_dir / f"{default}.yaml"
-            if base_file.exists():
-                with open(base_file) as bf:
-                    base_cfg.update(yaml.safe_load(bf) or {})
-        base_cfg.update(cfg)
-        cfg = base_cfg
+    cfg = load_config(args.config)
 
     schema_path = cfg["constrained"]["schema_path"]
     with open(schema_path) as f:

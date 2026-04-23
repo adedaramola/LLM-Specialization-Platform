@@ -6,8 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import yaml
-
+from src.config import load_config
 from src.manifest.run_manifest import create_manifest
 from src.tracking.tracker import build_tracker
 from src.training.sft_trainer import run_sft
@@ -18,22 +17,7 @@ def main():
     parser.add_argument("--config", required=True)
     args = parser.parse_args()
 
-    with open(args.config) as f:
-        cfg = yaml.safe_load(f)
-
-    # Merge base config if defaults key present
-    if "defaults" in cfg:
-        config_dir = Path(args.config).parent
-        base_cfg = {}
-        for default in cfg.pop("defaults"):
-            base_file = config_dir / f"{default}.yaml"
-            if base_file.exists():
-                with open(base_file) as bf:
-                    base_cfg.update(yaml.safe_load(bf) or {})
-        base_cfg.update(cfg)
-        cfg = base_cfg
-
-    cfg["_config_path"] = args.config
+    cfg = load_config(args.config)
 
     tracker = build_tracker(cfg.get("tracking", {}))
 
