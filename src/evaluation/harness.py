@@ -104,7 +104,7 @@ def _constrained_generate(provider, prompts, schema, constrained_cfg, gen_cfg) -
             results = []
             for i, p in enumerate(prompts):
                 try:
-                    results.append(json.dumps(generator(p)))
+                    results.append(generator(p))
                 except Exception:
                     results.append("")
                 if (i + 1) % 40 == 0 or (i + 1) == len(prompts):
