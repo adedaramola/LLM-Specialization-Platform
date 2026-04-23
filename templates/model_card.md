@@ -188,11 +188,11 @@ ollama run {{ollama_model_tag}} "Extract entities from: ..."
 
 ## Known Limitations
 
-- {{limitation_1}}
+- Evaluated only on the training task distribution; real-world inputs may differ in ways not captured by the test set.
 - Model may produce syntactically valid JSON that does not conform to the schema without constrained decoding. Production deployment should use outlines or equivalent.
 - Field-level extraction accuracy is low on this task — the model identifies entities correctly but field name alignment with the reference schema is inconsistent. This is a dataset labeling issue, not a model capacity issue.
 - Evaluated only on the task distribution used for training. Out-of-distribution inputs are untested.
-- Adapter-to-quantized degradation profile pending post-export verification.
+- Adapter-to-quantized degradation profile: see Evaluation Results table above.
 
 ## Intended Use
 

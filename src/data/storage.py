@@ -1,6 +1,9 @@
 """
 Storage abstraction: local filesystem, S3-compatible, or HF Hub.
-All data I/O in the pipeline goes through StorageBackend.
+
+All three backends are fully implemented. Pipeline scripts use local paths
+directly for simplicity; call `build_storage(cfg)` when you need S3 or HF Hub
+portability without changing script logic.
 """
 from __future__ import annotations
 

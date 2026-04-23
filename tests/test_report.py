@@ -19,7 +19,7 @@ METRICS_DATA = {
         "dpo":  {"raw": {"field_f1": 0.83, "null_accuracy": 0.88, "schema_validity": 0.94}, "constrained": {}, "pass_fail": {}},
         "merged_bf16": {"raw": {"field_f1": 0.82, "null_accuracy": 0.87, "schema_validity": 0.93}, "constrained": {}, "pass_fail": {}},
         "gguf_q8":  {"raw": {"field_f1": 0.81, "null_accuracy": 0.86, "schema_validity": 0.93}, "constrained": {}, "pass_fail": {}},
-        "gguf_q4k": {"raw": {"field_f1": 0.77, "null_accuracy": 0.84, "schema_validity": 0.91}, "constrained": {}, "pass_fail": {}},
+        "gguf_q4":  {"raw": {"field_f1": 0.77, "null_accuracy": 0.84, "schema_validity": 0.91}, "constrained": {}, "pass_fail": {}},
     },
 }
 

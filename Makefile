@@ -1,4 +1,4 @@
-.PHONY: all setup train evaluate export clean docker-build docker-run lint test generate-preferences
+.PHONY: all setup train evaluate export clean docker-build docker-run lint test smoke-test check generate-preferences
 
 CONFIG ?= configs/sft_config.yaml
 
@@ -44,10 +44,19 @@ docker-run:
 	docker run --gpus all --rm -v $(PWD):/workspace llm-specialization:latest make train CONFIG=$(CONFIG)
 
 test:
-	pytest tests/ -v --cov=src --cov-report=term-missing
+	python3 -m pytest tests/ -v --cov=src --cov-report=term-missing
 
+# Verify pipeline logic without GPU or model downloads
+smoke-test:
+	python3 -m pytest tests/ -v
+
+# Syntax check — find avoids shell glob issues with **
 lint:
-	python -m py_compile src/**/*.py scripts/*.py
+	find src scripts -name "*.py" | xargs python3 -m py_compile
+	@echo "Syntax check passed"
+
+# Primary CI target: syntax + full test suite
+check: lint smoke-test
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true

@@ -35,6 +35,12 @@ dataset:
   licenses: []
   synthetic_generation_model: null  # e.g. "gpt-4o" if synthetic negatives used
   content_hash: null                # auto-filled by prepare_dataset.py
+  decontamination:
+    ngram_n: 8                      # n-gram size for overlap decontamination
+    ngram_overlap_threshold: 0.5
+
+# Tokenizer audit (Phase 0) — written by scripts/tokenizer_audit.py
+tokenizer_audit_path: "./artifacts/tokenizer_audit.json"
 
 # Storage backend
 storage:

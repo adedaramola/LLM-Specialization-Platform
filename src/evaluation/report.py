@@ -122,6 +122,13 @@ def generate_report(
     pref = config.get("preference_data", {})
     repro = config.get("reproducibility", {})
 
+    # Load tokenizer audit manifest (written by scripts/tokenizer_audit.py)
+    tok_audit: dict[str, Any] = {}
+    _tok_path = config.get("tokenizer_audit_path", "./artifacts/tokenizer_audit.json")
+    if _tok_path and Path(_tok_path).is_file():
+        with open(_tok_path) as f:
+            tok_audit = json.load(f)
+
     replacements: dict[str, str] = {
         # Header
         "model_name": config.get("model", {}).get("name", "—").split("/")[-1] + "-specialized",
@@ -144,13 +151,23 @@ def generate_report(
         "null_fraction": _fmt(ds.get("null_case_fraction", 0.15)),
         "dataset_hash": manifest.get("dataset_hash", "—"),
         "synthetic_generation_model": ds.get("synthetic_generation_model") or "None",
-        "ngram_n": "8",
-        # Tokenizer — Qwen2.5 known values
-        "tokenizer_class": "Qwen2Tokenizer (tiktoken-based BPE)",
-        "vocab_size": "151,936",
-        "chat_template_present": "Yes (ChatML: <|im_start|> / <|im_end|>)",
-        "added_tokens": "None beyond base vocab",
-        "byte_fallback_chars": "Not applicable (full unicode coverage via large vocab)",
+        "ngram_n": str(ds.get("decontamination", {}).get("ngram_n", "—")),
+        # Tokenizer — derived from tokenizer audit manifest (artifacts/tokenizer_audit.json)
+        # Falls back to "—" when audit has not been run so the omission is visible
+        "tokenizer_class": "—",  # not captured by audit; check model hub for this
+        "vocab_size": str(tok_audit["vocab_size"]) if "vocab_size" in tok_audit else "—",
+        "chat_template_present": (
+            "Yes" if tok_audit.get("chat_template_present") else
+            "No" if "chat_template_present" in tok_audit else "—"
+        ),
+        "added_tokens": (
+            (", ".join(tok_audit["added_tokens"]) or "None")
+            if "added_tokens" in tok_audit else "—"
+        ),
+        "byte_fallback_chars": (
+            (", ".join(tok_audit["byte_fallback_chars"]) or "None")
+            if "byte_fallback_chars" in tok_audit else "—"
+        ),
         # SFT hyperparameters — prefer sft_cfg if available
         "lora_rank": _fmt(lora.get("rank", 32)),
         "lora_alpha": _fmt(lora.get("alpha", 32)),
@@ -233,8 +250,6 @@ def generate_report(
         # Inference examples
         "hf_repo": lic.get("base_model", config.get("model", {}).get("name", "your-hf-repo")),
         "ollama_model_tag": config.get("model", {}).get("name", "—").split("/")[-1].lower(),
-        # Limitations placeholder
-        "limitation_1": "Evaluated only on synthetic training distribution; real-world inputs may differ.",
         "intended_use": config.get("task", {}).get("description", "Structured JSON extraction from text."),
     }
 
