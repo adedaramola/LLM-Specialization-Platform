@@ -24,6 +24,8 @@ def main():
                         choices=["baseline", "post-sft", "post-dpo", "all", "post-export"])
     parser.add_argument("--all-artifacts", action="store_true")
     parser.add_argument("--post-export", action="store_true")
+    parser.add_argument("--merge-existing", metavar="PATH",
+                        help="Load existing metrics.json and merge new results into it")
     args = parser.parse_args()
 
     with open(args.config) as f:
@@ -48,6 +50,24 @@ def main():
 
     results = []
     mode = args.mode
+
+    # Seed results from an existing metrics.json so prior model evals aren't re-run
+    if args.merge_existing and Path(args.merge_existing).exists():
+        with open(args.merge_existing) as f:
+            existing = json.load(f)
+        for label, entry in existing.get("models", {}).items():
+            results.append({
+                "model": label,
+                "model_path": entry.get("model_path", ""),
+                "provider": entry.get("provider", ""),
+                "raw": entry.get("raw", {}),
+                "constrained": entry.get("constrained", {}),
+                "raw_vs_guided_gap": entry.get("raw_vs_guided_gap", {}),
+                "n_examples": entry.get("n_examples", 0),
+                "n_positive": entry.get("n_positive", 0),
+                "n_null": entry.get("n_null", 0),
+            })
+        print(f"Loaded {len(results)} existing model results from {args.merge_existing}")
 
     if args.all_artifacts or mode in ("baseline", "all"):
         base_cfg = cfg["models"]["base"]
