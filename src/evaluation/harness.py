@@ -113,7 +113,8 @@ def _constrained_generate(provider, prompts, schema, constrained_cfg, gen_cfg) -
                 if (i + 1) % 40 == 0 or (i + 1) == len(prompts):
                     print(f"  [constrained] {i + 1}/{len(prompts)} examples generated")
             return results
-        except ImportError:
+        except Exception as e:
+            print(f"  [constrained] skipped: {type(e).__name__}: {e}")
             return [""] * len(prompts)
     return [""] * len(prompts)
 
