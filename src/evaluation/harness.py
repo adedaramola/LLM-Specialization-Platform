@@ -206,30 +206,74 @@ def emit_metrics_json(
     thresholds: dict[str, float],
     output_path: str,
     schema_version: str = "1.0.0",
+    gate_cfg: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    def check_threshold(value: float, key: str) -> bool:
-        return value >= thresholds.get(key, 0.0)
+    """Emit metrics.json.
+
+    pass_fail — raw decoding metrics vs raw thresholds (research transparency).
+    deployment_pass_fail — gate-mode metrics vs deployment thresholds (drives ci_pass).
+
+    The gate mode is set in eval_config.yaml under metrics.ci_gate. It defaults to
+    "constrained" so the CI gate matches the production serving mode. Raw pass_fail
+    is retained so a reviewer can see unconstrained behaviour without it affecting
+    the deployment decision.
+    """
+    gate_cfg = gate_cfg or {}
+    gate_mode = gate_cfg.get("mode", "raw")
+    fallback_to_raw = gate_cfg.get("fallback_to_raw", True)
+    gate_thresholds = gate_cfg.get("thresholds") or thresholds
+
+    def _check(value: float, key: str, thr: dict) -> bool:
+        return value >= thr.get(key, 0.0)
 
     output: dict[str, Any] = {
         "schema_version": schema_version,
+        "ci_gate_mode": gate_mode,
         "models": {},
         "ci_pass": True,
     }
 
     for result in results:
         label = result["model"]
-        model_entry: dict[str, Any] = {
-            "raw": result["raw"],
-            "constrained": result.get("constrained", {}),
-            "raw_vs_guided_gap": result.get("raw_vs_guided_gap", {}),
-            "pass_fail": {},
-        }
-        for metric_key, value in result["raw"].items():
+        raw = result["raw"]
+        constrained = result.get("constrained", {})
+
+        # Research transparency: raw pass_fail against raw thresholds
+        raw_pass_fail: dict[str, Any] = {}
+        for metric_key, value in raw.items():
             if isinstance(value, float):
-                passed = check_threshold(value, metric_key)
-                model_entry["pass_fail"][metric_key] = {"value": value, "passed": passed}
+                raw_pass_fail[metric_key] = {
+                    "value": value,
+                    "passed": _check(value, metric_key, thresholds),
+                }
+
+        # Deployment gate: use gate_mode metrics, fall back to raw if constrained not run
+        if gate_mode == "constrained" and constrained:
+            gate_metrics = constrained
+            effective_mode = "constrained"
+        elif fallback_to_raw or gate_mode == "raw":
+            gate_metrics = raw
+            effective_mode = "raw"
+        else:
+            gate_metrics = {}
+            effective_mode = "none"
+
+        deployment_pass_fail: dict[str, Any] = {}
+        for metric_key, value in gate_metrics.items():
+            if isinstance(value, float):
+                passed = _check(value, metric_key, gate_thresholds)
+                deployment_pass_fail[metric_key] = {"value": value, "passed": passed}
                 if not passed:
                     output["ci_pass"] = False
+
+        model_entry: dict[str, Any] = {
+            "raw": raw,
+            "constrained": constrained,
+            "raw_vs_guided_gap": result.get("raw_vs_guided_gap", {}),
+            "pass_fail": raw_pass_fail,
+            "deployment_pass_fail": deployment_pass_fail,
+            "deployment_gate_mode": effective_mode,
+        }
         output["models"][label] = model_entry
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)

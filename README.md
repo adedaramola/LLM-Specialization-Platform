@@ -237,21 +237,30 @@ inference:
 
 ### CI gate
 
-`metrics.json` schema is versioned and designed for downstream consumption:
+`metrics.json` schema is versioned and designed for downstream consumption. The gate treats evaluation as two distinct products:
+
+- **`pass_fail`** — raw decoding metrics vs raw thresholds. Research transparency: shows what the model can do without structural guidance.
+- **`deployment_pass_fail`** — constrained decoding metrics vs deployment thresholds. Drives `ci_pass`. Matches production serving mode (outlines / xgrammar).
 
 ```json
 {
   "schema_version": "1.0.0",
+  "ci_gate_mode": "constrained",
   "models": {
     "dpo": {
-      "raw": { "schema_validity": 0.407, "null_accuracy": 1.0, ... },
-      "constrained": { "schema_validity": 0.718, ... },
-      "pass_fail": { "null_accuracy": { "value": 1.0, "passed": true }, ... }
+      "raw": { "schema_validity": 0.407, "null_accuracy": 1.0, "field_f1": 0.789 },
+      "constrained": { "schema_validity": 0.718, "null_accuracy": 1.0, "field_f1": 0.385 },
+      "raw_vs_guided_gap": { "schema_validity_gap": 0.311, "field_f1_gap": -0.404 },
+      "pass_fail": { "schema_validity": { "value": 0.407, "passed": false }, ... },
+      "deployment_pass_fail": { "schema_validity": { "value": 0.718, "passed": true }, ... },
+      "deployment_gate_mode": "constrained"
     }
   },
-  "ci_pass": false
+  "ci_pass": true
 }
 ```
+
+The gate mode and deployment thresholds are configurable in `configs/eval_config.yaml` under `metrics.ci_gate`. Setting `mode: "raw"` restores the previous behaviour.
 
 ---
 

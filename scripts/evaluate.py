@@ -153,6 +153,7 @@ def main():
         cfg["metrics"]["thresholds"],
         cfg["output"]["metrics_json"],
         schema_version=cfg["output"].get("metrics_schema_version", "1.0.0"),
+        gate_cfg=cfg["metrics"].get("ci_gate"),
     )
 
     print(f"\nmetrics.json written to: {cfg['output']['metrics_json']}")
