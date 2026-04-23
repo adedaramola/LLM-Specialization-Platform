@@ -56,6 +56,21 @@ def _parse_cuda_toolkit(raw: str) -> str:
     return m.group(1) if m else raw.splitlines()[0].strip()
 
 
+def _resolve_split_size(manifest: dict, ds: dict, metric_key: str, path_key: str) -> Any:
+    """Resolve train/val/test size: manifest → ds field → line count → None."""
+    from_manifest = manifest.get("metrics", {}).get(metric_key)
+    if from_manifest is not None:
+        return from_manifest
+    from_cfg = ds.get(metric_key.replace("_size", "_size"))  # e.g. train_size
+    if from_cfg is not None:
+        return from_cfg
+    path = ds.get(path_key)
+    if path and Path(path).is_file():
+        with open(path) as f:
+            return sum(1 for _ in f)
+    return None
+
+
 def generate_report(
     template_path: str,
     metrics_json_path: str,
@@ -123,12 +138,9 @@ def generate_report(
         "dataset_licenses": ", ".join(ds.get("licenses", [])) or "—",
         # Dataset
         "dataset_sources": ", ".join(ds.get("sources", [])) or "—",
-        "train_size": _fmt(manifest.get("metrics", {}).get("train_size", ds.get("train_size")) or
-                           len(open(ds["train_path"]).readlines()) if Path(ds.get("train_path", "")).exists() else "2998"),
-        "val_size": _fmt(manifest.get("metrics", {}).get("val_size", ds.get("val_size")) or
-                         len(open(ds["val_path"]).readlines()) if Path(ds.get("val_path", "")).exists() else "373"),
-        "test_size": _fmt(manifest.get("metrics", {}).get("test_size", ds.get("test_size")) or
-                          len(open(ds["test_path"]).readlines()) if Path(ds.get("test_path", "")).exists() else "375"),
+        "train_size": _fmt(_resolve_split_size(manifest, ds, "train_size", "train_path")),
+        "val_size": _fmt(_resolve_split_size(manifest, ds, "val_size", "val_path")),
+        "test_size": _fmt(_resolve_split_size(manifest, ds, "test_size", "test_path")),
         "null_fraction": _fmt(ds.get("null_case_fraction", 0.15)),
         "dataset_hash": manifest.get("dataset_hash", "—"),
         "synthetic_generation_model": ds.get("synthetic_generation_model") or "None",

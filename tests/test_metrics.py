@@ -61,10 +61,24 @@ class TestFieldLevelF1:
         result = field_level_f1([pred], [ref])
         assert result["field_f1"] == 1.0
 
-    def test_no_entities_both(self):
+    def test_null_case_excluded_when_labeled(self):
+        # Null cases must be excluded from field F1 — abstention quality is in null_accuracy
+        pred = ref = '{"null_extraction": true}'
+        result = field_level_f1([pred], [ref], null_labels=[True])
+        assert result["field_f1"] == 0.0  # n=0, no positive examples
+
+    def test_null_case_without_labels_scores_zero(self):
+        # Without labels, both-empty is a degenerate positive case: no entities extracted = 0 F1
         pred = ref = '{"null_extraction": true}'
         result = field_level_f1([pred], [ref])
-        assert result["field_f1"] == 1.0
+        assert result["field_f1"] == 0.0
+
+    def test_over_abstain_scores_zero(self):
+        # A model predicting null on a positive example gets field_f1=0
+        pred = '{"null_extraction": true}'
+        ref = json.dumps({"null_extraction": False, "entities": [{"name": "a", "type": "t", "value": "v"}]})
+        result = field_level_f1([pred], [ref], null_labels=[False])
+        assert result["field_f1"] == 0.0
 
 
 class TestExactMatch:

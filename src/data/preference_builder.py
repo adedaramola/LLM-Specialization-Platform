@@ -146,11 +146,12 @@ def build_preference_pairs(
                         pass
 
     # Build synthetic null-case pairs: chosen=correct abstention, rejected=hallucinated extraction.
-    fallback_rejected = json.dumps(
-        {"entities": [{"name": "Unknown Entity", "type": "ORG"}], "null_extraction": False}
-    )
+    # Only emit when there are real positive-case completions to use as rejected responses —
+    # a fabricated rejected response with no grounding in the model's actual output adds noise.
     for example, chosen_text, chosen_score in unpaired_null_cases:
-        rejected_text = rng.choice(positive_completions) if positive_completions else fallback_rejected
+        if not positive_completions:
+            continue
+        rejected_text = rng.choice(positive_completions)
         pairs.append({
             "prompt": example["prompt"],
             "chosen": chosen_text,
@@ -297,7 +298,7 @@ def validate_preference_dataset(
     null_count = sum(1 for p in pairs if p.get("is_null_case", False))
     fraction = null_count / len(pairs) if pairs else 0.0
     if null_case_fraction > 0 and fraction < null_case_fraction:
-        print(
-            f"Warning: null-case pair fraction {fraction:.2%} below target "
-            f"{null_case_fraction:.2%} — continuing with available pairs."
+        raise ValueError(
+            f"Null-case pair fraction {fraction:.2%} below target "
+            f"{null_case_fraction:.2%}. Add more null-case prompts or lower null_case_fraction."
         )

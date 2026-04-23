@@ -63,32 +63,38 @@ def null_accuracy(
 
 
 def field_level_f1(
-    predictions: list[str], references: list[str]
+    predictions: list[str],
+    references: list[str],
+    null_labels: list[bool] | None = None,
 ) -> dict[str, float]:
+    """Field-level P/R/F1 computed on positive examples only.
+
+    Null cases are excluded: abstention correctness is captured by null_accuracy,
+    not by field extraction quality. Including null cases in this metric inflates
+    it to exactly the null-case fraction for any model that over-abstains.
+    """
     total_p = total_r = total_f1 = 0.0
     n = 0
-    for pred_str, ref_str in zip(predictions, references):
+    for i, (pred_str, ref_str) in enumerate(zip(predictions, references)):
+        if null_labels is not None and null_labels[i]:
+            continue  # null cases are measured by null_accuracy, not here
+
         pred_obj, pred_ok = _parse_json_safe(pred_str)
         ref_obj, ref_ok = _parse_json_safe(ref_str)
-        if not pred_ok or not ref_ok:
+        if not ref_ok:
             n += 1
             continue
 
         pred_entities = {
             e["name"]: (e["type"], e["value"])
-            for e in pred_obj.get("entities", [])
+            for e in (pred_obj or {}).get("entities", [])
             if isinstance(e, dict) and "name" in e
-        }
+        } if pred_ok else {}
         ref_entities = {
             e["name"]: (e["type"], e["value"])
             for e in ref_obj.get("entities", [])
             if isinstance(e, dict) and "name" in e
         }
-
-        if not ref_entities and not pred_entities:
-            total_f1 += 1.0
-            n += 1
-            continue
 
         correct = sum(
             1 for k, v in pred_entities.items()
@@ -160,6 +166,6 @@ def compute_all_metrics(
     result: dict[str, float] = {}
     result["schema_validity"] = schema_validity(predictions, schema)
     result["exact_match"] = exact_match(predictions, references)
-    result.update(field_level_f1(predictions, references))
+    result.update(field_level_f1(predictions, references, null_labels))
     result.update(null_accuracy(predictions, null_labels))
     return result
