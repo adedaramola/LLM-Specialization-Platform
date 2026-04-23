@@ -72,7 +72,7 @@ def export_gguf(
     f32_path = Path(output_dir) / "model_f32.gguf"
 
     subprocess.run(
-        ["python", str(convert_script), merged_model_dir, "--outfile", str(f32_path)],
+        [shutil.which("python3") or "python3", str(convert_script), merged_model_dir, "--outfile", str(f32_path)],
         check=True,
     )
 
