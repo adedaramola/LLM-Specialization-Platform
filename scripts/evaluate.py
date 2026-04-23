@@ -139,6 +139,7 @@ def main():
             if not Path(path).exists() and not path.endswith(".gguf"):
                 print(f"Skipping {artifact_key}: path not found ({path})")
                 continue
+            _free_gpu_memory()
             print(f"Evaluating artifact: {artifact_key}")
             orig_provider = cfg["inference"]["provider"]
             cfg["inference"]["provider"] = artifact_cfg["runtime"]
@@ -204,6 +205,18 @@ def main():
 
     if not output["ci_pass"]:
         sys.exit(1)
+
+
+def _free_gpu_memory():
+    import gc
+    gc.collect()
+    try:
+        import torch
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.ipc_collect()
+    except Exception:
+        pass
 
 
 def _load_test(path: str) -> list[dict]:
