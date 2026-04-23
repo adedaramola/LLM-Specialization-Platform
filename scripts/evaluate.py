@@ -164,27 +164,31 @@ def main():
     qual_out = qual_cfg.get("output_path", "./artifacts/eval/qualitative_samples.json")
     if n_qual > 0 and results:
         best_result = next(
-            (r for r in reversed(results) if r["model"] in ("dpo", "sft")),
-            results[-1],
+            (r for r in reversed(results) if r["model"] in ("dpo", "sft") and r.get("model_path")),
+            next((r for r in reversed(results) if r.get("model_path")), None),
         )
-        print(f"\nCollecting {n_qual} qualitative samples from model: {best_result['model']}")
-        qual_samples = collect_qualitative_samples(
-            model_label=best_result["model"],
-            model_path=best_result["model_path"],
-            test_examples=test_examples,
-            schema=schema,
-            eval_cfg=cfg,
-            n_samples=n_qual,
-            seed=cfg.get("reproducibility", {}).get("seed", 42),
-        )
-        Path(qual_out).parent.mkdir(parents=True, exist_ok=True)
-        with open(qual_out, "w") as f:
-            json.dump(qual_samples, f, indent=2, ensure_ascii=False)
-        by_cat: dict[str, int] = {}
-        for s in qual_samples:
-            by_cat[s["category"]] = by_cat.get(s["category"], 0) + 1
-        print(f"Qualitative samples written to: {qual_out}")
-        print(f"  Category breakdown: {by_cat}")
+        if best_result is None:
+            print("Skipping qualitative samples: no model with a valid path in results")
+            n_qual = 0
+        else:
+            print(f"\nCollecting {n_qual} qualitative samples from model: {best_result['model']}")
+            qual_samples = collect_qualitative_samples(
+                model_label=best_result["model"],
+                model_path=best_result["model_path"],
+                test_examples=test_examples,
+                schema=schema,
+                eval_cfg=cfg,
+                n_samples=n_qual,
+                seed=cfg.get("reproducibility", {}).get("seed", 42),
+            )
+            Path(qual_out).parent.mkdir(parents=True, exist_ok=True)
+            with open(qual_out, "w") as f:
+                json.dump(qual_samples, f, indent=2, ensure_ascii=False)
+            by_cat: dict[str, int] = {}
+            for s in qual_samples:
+                by_cat[s["category"]] = by_cat.get(s["category"], 0) + 1
+            print(f"Qualitative samples written to: {qual_out}")
+            print(f"  Category breakdown: {by_cat}")
 
     # Report generation — fill model card template with actual metrics
     report_path = cfg.get("output", {}).get("report_path")
