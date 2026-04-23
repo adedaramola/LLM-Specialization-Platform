@@ -15,6 +15,8 @@ This pipeline is designed adversarially against those failure modes:
 - **Null-case pairs are first-class** — DPO preference data explicitly trains the model to abstain when there's nothing to extract, not just to extract well when there is
 - **Evaluation runs against the artifact that ships** — merged BF16 and each GGUF quantization are re-evaluated on the frozen test set, not just the adapter during training
 - **Raw and constrained metrics are reported separately** — a model hitting 99% only under schema constraints has learned something different from one that doesn't need them
+- **Field-level F1 is computed on positive examples only** — including null cases in field F1 inflates it to exactly the null-case fraction for any over-abstaining model, masking real extraction quality
+- **Validation gates raise, not warn** — preference dataset validators raise `ValueError` when thresholds are breached; silent warnings let bad datasets reach training
 - **Every run is reproducible** — manifests capture git commit, lockfile hash, dataset hash, and full hardware fingerprint (driver, CUDA, cuDNN, GPU model)
 - **CI gate is machine-readable** — `metrics.json` is emitted with pass/fail flags against configurable thresholds, designed to be consumed by downstream GitOps pipelines
 
@@ -40,19 +42,24 @@ Phase 4   Export: LoRA adapters → merged BF16 → GGUF Q8_0 + Q4_K_M → re-ve
 
 Trained on 2,998 examples (14% null cases), evaluated on a frozen 375-example test set.
 
-| Artifact | Schema Validity | Null Accuracy | Entity F1 | Decoding |
+| Artifact | Schema Validity | Null Accuracy | Extraction F1 | Decoding |
 |---|---|---|---|---|
 | SFT adapter | 0.569 | **1.000** | 0.665 | raw |
 | DPO adapter | 0.407 | **1.000** | 0.789 | raw |
 | DPO adapter | **0.718** | **1.000** | 0.385 | constrained |
+| Merged BF16 | 0.412 | **1.000** | 0.779 | raw |
+| GGUF Q8_0 | 0.434 | **1.000** | 0.762 | raw |
+| GGUF Q4_K_M | 0.678 | **1.000** | 0.501 | raw |
+
+**Extraction F1** measures whether the model correctly triggers or abstains from extraction (precision/recall on the extraction decision). **Field-level F1** (entity name + type + value match on positive examples only) is the primary quality metric for extracted content and requires re-evaluation under the corrected metric — see below.
 
 Key findings:
-- **Null accuracy is perfect on both models** — the model never hallucinates an extraction when there is nothing to extract. This was the primary DPO objective.
-- **DPO improved entity recall** by +15% over SFT (0.650 vs 0.498) at the cost of raw schema validity.
+- **Null accuracy is perfect across all artifacts** — the model never hallucinates an extraction when there is nothing to extract, and this holds through BF16 merge and both GGUF quantizations.
+- **DPO improved extraction recall** (+15% over SFT: 0.650 vs 0.498) at the cost of raw schema validity, indicating the model became more willing to attempt extraction at the expense of output structure.
+- **Q4 quantization hurts recall significantly** (0.616 → 0.334 from Q8 to Q4) while schema validity rises — the model generates more syntactically valid but content-sparse JSON at lower precision.
 - **Constrained decoding recovers schema validity** to 0.718 for DPO — production deployment should use outlines or equivalent.
-- **Field-level F1 is low** — the extraction schema uses fine-grained field names that the model generates with high variance. This is a dataset labeling issue, not a model capacity issue; the fix is in data curation.
 
-General-capability regression check was not run (base model path not configured in this run).
+General-capability regression check (MMLU, HellaSwag) was not run — base model path was not configured in this run.
 
 ---
 
@@ -92,8 +99,9 @@ General-capability regression check was not run (base model path not configured 
 │   │   ├── regression.py         # General-capability regression slice (MMLU, HellaSwag)
 │   │   ├── report.py             # Model card generation from metrics.json
 │   │   └── providers/
-│   │       ├── hf_provider.py    # HuggingFace native (batched generation)
-│   │       ├── vllm_provider.py  # vLLM
+│   │       ├── hf_provider.py        # HuggingFace native (batched, left-padded)
+│   │       ├── llamacpp_provider.py  # llama-cpp-python (GGUF evaluation)
+│   │       ├── vllm_provider.py      # vLLM
 │   │       ├── ollama_provider.py
 │   │       └── tgi_provider.py
 │   ├── export/
@@ -208,6 +216,12 @@ python scripts/evaluate.py --config configs/eval_config.yaml --mode all
 
 # Evaluate post-export artifacts (merged BF16, GGUFs)
 python scripts/evaluate.py --config configs/eval_config.yaml --post-export
+
+# Evaluate only export artifacts, merging into an existing metrics.json
+# (avoids re-downloading the base model to re-run SFT/DPO eval)
+python scripts/evaluate.py --config configs/eval_config.yaml \
+  --mode post-export --post-export \
+  --merge-existing ./artifacts/eval/metrics.json
 ```
 
 ### Switching inference provider
@@ -216,8 +230,10 @@ Change one line in `configs/eval_config.yaml`:
 
 ```yaml
 inference:
-  provider: "hf_native"   # or: vllm | ollama | tgi
+  provider: "hf_native"   # or: vllm | ollama | tgi | llama_cpp
 ```
+
+`llama_cpp` is used automatically for GGUF artifact evaluation. It requires a source-built `llama-cpp-python` — see [Dockerfile](Dockerfile) for the build flags.
 
 ### CI gate
 
