@@ -99,7 +99,7 @@ def _constrained_generate(provider, prompts, schema, constrained_cfg, gen_cfg) -
             hf_tok = getattr(provider, "_tokenizer", None)
             if hf_model is None:
                 return [""] * len(prompts)
-            om = outlines.models.transformers(hf_model, hf_tok)
+            om = outlines.models.Transformers(hf_model, hf_tok)
             generator = outlines.generate.json(om, schema)
             results = []
             for p in prompts:
