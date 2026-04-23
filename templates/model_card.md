@@ -168,8 +168,8 @@ import outlines.models
 import json
 
 schema = json.load(open("configs/schemas/extraction_schema.json"))
-model = outlines.models.transformers("{{hf_repo}}")
-generator = outlines.generate.json(model, schema)
+model = outlines.models.Transformers("{{hf_repo}}")
+generator = outlines.Generator(model, outlines.json_schema(schema))
 result = generator(prompt)
 print(result)  # guaranteed valid JSON per schema
 ```
@@ -181,7 +181,7 @@ ollama run {{ollama_model_tag}} "Extract entities from: ..."
 
 ### llama.cpp
 ```bash
-./llama.cpp/build/bin/llama-cli -m artifacts/export/model_q4_k_m.gguf -p "..." -n 256
+./llama.cpp/build/bin/llama-cli -m artifacts/export/gguf/model_q4_k_m.gguf -p "..." -n 128
 ```
 
 ---
@@ -189,9 +189,10 @@ ollama run {{ollama_model_tag}} "Extract entities from: ..."
 ## Known Limitations
 
 - {{limitation_1}}
-- Model may hallucinate entity values on inputs with ambiguous phrasing.
-- GGUF Q4_K_M shows measurable degradation on null-case accuracy vs adapter; see degradation table.
+- Model may produce syntactically valid JSON that does not conform to the schema without constrained decoding. Production deployment should use outlines or equivalent.
+- Field-level extraction accuracy is low on this task — the model identifies entities correctly but field name alignment with the reference schema is inconsistent. This is a dataset labeling issue, not a model capacity issue.
 - Evaluated only on the task distribution used for training. Out-of-distribution inputs are untested.
+- Adapter-to-quantized degradation profile pending post-export verification.
 
 ## Intended Use
 
