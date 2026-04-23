@@ -18,6 +18,9 @@ inference:
     host: "localhost"
     port: 11434
     model_tag: null                 # filled at eval time
+  llama_cpp:
+    n_gpu_layers: -1                # -1 = all layers on GPU
+    n_ctx: 2048
   tgi:
     host: "localhost"
     port: 8080
@@ -56,11 +59,11 @@ export_artifacts:
     path: "./artifacts/export/merged_bf16"
     runtime: "hf_native"
   gguf_q8:
-    path: "./artifacts/export/model_q8_0.gguf"
-    runtime: "ollama"
+    path: "./artifacts/export/gguf/model_q8_0.gguf"
+    runtime: "llama_cpp"
   gguf_q4:
-    path: "./artifacts/export/model_q4_k_m.gguf"
-    runtime: "ollama"
+    path: "./artifacts/export/gguf/model_q4_k_m.gguf"
+    runtime: "llama_cpp"
 
 # Metrics and CI/CD thresholds
 metrics:

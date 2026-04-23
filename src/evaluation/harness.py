@@ -22,6 +22,9 @@ def build_provider(provider_name: str, model_path: str, cfg: dict[str, Any]):
         from src.evaluation.providers.ollama_provider import OllamaProvider
         model_tag = cfg.get("ollama", {}).get("model_tag") or model_path
         return OllamaProvider(model_tag, cfg.get("ollama", {}))
+    elif provider_name == "llama_cpp":
+        from src.evaluation.providers.llamacpp_provider import LlamaCppProvider
+        return LlamaCppProvider(model_path, cfg.get("llama_cpp", {}))
     elif provider_name == "tgi":
         from src.evaluation.providers.tgi_provider import TGIProvider
         return TGIProvider(model_path, cfg.get("tgi", {}))
