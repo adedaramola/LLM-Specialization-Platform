@@ -100,13 +100,15 @@ def _constrained_generate(provider, prompts, schema, constrained_cfg, gen_cfg) -
             if hf_model is None:
                 return [""] * len(prompts)
             om = outlines.models.Transformers(hf_model, hf_tok)
-            generator = outlines.generate.json(om, schema)
+            generator = outlines.Generator(om, outlines.json_schema(schema))
             results = []
-            for p in prompts:
+            for i, p in enumerate(prompts):
                 try:
                     results.append(json.dumps(generator(p)))
                 except Exception:
                     results.append("")
+                if (i + 1) % 40 == 0 or (i + 1) == len(prompts):
+                    print(f"  [constrained] {i + 1}/{len(prompts)} examples generated")
             return results
         except ImportError:
             return [""] * len(prompts)
