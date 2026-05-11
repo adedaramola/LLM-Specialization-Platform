@@ -109,7 +109,9 @@ def _constrained_generate(provider, prompts, schema, constrained_cfg, gen_cfg) -
             if hf_model is None:
                 return [""] * len(prompts)
             om = outlines.models.Transformers(hf_model, hf_tok)
-            generator = outlines.generate.json(om, schema)
+            # outlines 0.0.46 requires the schema as a JSON string, not a dict
+            schema_str = json.dumps(schema) if isinstance(schema, dict) else schema
+            generator = outlines.generate.json(om, schema_str)
             max_tokens = gen_cfg.get("max_new_tokens", 512)
             results = []
             for i, p in enumerate(prompts):
