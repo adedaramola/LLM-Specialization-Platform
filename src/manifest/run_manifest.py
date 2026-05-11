@@ -70,7 +70,10 @@ def capture_hardware() -> HardwarefingerPrint:
     try:
         import torch
         pytorch_cuda = torch.version.cuda or "cpu-only"
-        cudnn_version = str(torch.backends.cudnn.version())
+        try:
+            cudnn_version = str(torch.backends.cudnn.version())
+        except RuntimeError as e:
+            cudnn_version = f"unavailable ({e})"
         gpu_count = torch.cuda.device_count()
         gpu_model = torch.cuda.get_device_name(0) if gpu_count > 0 else "none"
     except ImportError:
