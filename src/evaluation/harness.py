@@ -93,28 +93,37 @@ def evaluate_model(
 
 
 def _constrained_generate(provider, prompts, schema, constrained_cfg, gen_cfg) -> list[str]:
+    # Prefer provider-native constrained generation (e.g. vLLM guided_json) — batched
+    # and no extra dependencies.  Fall through to outlines for hf_native.
+    if hasattr(provider, "generate_constrained"):
+        return provider.generate_constrained(prompts, schema, gen_cfg)
+
     backend = constrained_cfg.get("backend", "outlines")
     if backend == "outlines":
         try:
             import outlines
+            import outlines.generate
             import outlines.models
             hf_model = getattr(provider, "_model", None)
             hf_tok = getattr(provider, "_tokenizer", None)
             if hf_model is None:
                 return [""] * len(prompts)
             om = outlines.models.Transformers(hf_model, hf_tok)
-            generator = outlines.Generator(om, outlines.json_schema(schema))
+            generator = outlines.generate.json(om, schema)
+            max_tokens = gen_cfg.get("max_new_tokens", 512)
             results = []
             for i, p in enumerate(prompts):
                 try:
-                    results.append(generator(p))
-                except Exception:
+                    result = generator(p, max_tokens=max_tokens)
+                    results.append(json.dumps(result) if isinstance(result, dict) else str(result))
+                except Exception as e:
+                    print(f"  [constrained] example {i} failed: {type(e).__name__}: {e}")
                     results.append("")
                 if (i + 1) % 40 == 0 or (i + 1) == len(prompts):
                     print(f"  [constrained] {i + 1}/{len(prompts)} examples generated")
             return results
         except Exception as e:
-            print(f"  [constrained] skipped: {type(e).__name__}: {e}")
+            print(f"  [constrained] setup failed: {type(e).__name__}: {e}")
             return [""] * len(prompts)
     return [""] * len(prompts)
 

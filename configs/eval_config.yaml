@@ -5,7 +5,7 @@ defaults:
 
 # Inference provider: hf_native | vllm | ollama | tgi
 inference:
-  provider: "hf_native"
+  provider: "vllm"
   # Provider-specific settings (only the active provider is used)
   hf_native:
     device_map: "auto"
@@ -27,7 +27,7 @@ inference:
 
 # Generation settings
 generation:
-  max_new_tokens: 128
+  max_new_tokens: 512
   temperature: 0.0                  # greedy for evaluation consistency
   do_sample: false
   batch_size: 8
