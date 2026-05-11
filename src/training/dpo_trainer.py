@@ -13,7 +13,7 @@ from typing import Any
 import numpy as np
 import torch
 
-from src.training.sft_trainer import build_qlora_model, set_seeds
+from src.training.sft_trainer import set_seeds
 
 
 def precompute_reference_log_probs(
@@ -26,16 +26,26 @@ def precompute_reference_log_probs(
     Run the SFT checkpoint once over the preference dataset, cache log-probs.
     Only the policy model is loaded during DPO training — halves VRAM usage.
     """
+    import json as _json
+    from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
 
-    tokenizer = AutoTokenizer.from_pretrained(sft_checkpoint)
-    model = AutoModelForCausalLM.from_pretrained(
-        sft_checkpoint,
-        device_map="auto",
-        torch_dtype=torch.bfloat16,
-    )
+    adapter_cfg_path = Path(sft_checkpoint) / "adapter_config.json"
+    if adapter_cfg_path.exists():
+        adapter_cfg = _json.loads(adapter_cfg_path.read_text())
+        base_name = adapter_cfg["base_model_name_or_path"]
+        tokenizer = AutoTokenizer.from_pretrained(sft_checkpoint)
+        base = AutoModelForCausalLM.from_pretrained(
+            base_name, device_map="auto", torch_dtype=torch.bfloat16,
+        )
+        model = PeftModel.from_pretrained(base, sft_checkpoint)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(sft_checkpoint)
+        model = AutoModelForCausalLM.from_pretrained(
+            sft_checkpoint, device_map="auto", torch_dtype=torch.bfloat16,
+        )
     model.eval()
 
     log_probs = []
@@ -77,7 +87,10 @@ def run_dpo(cfg: dict[str, Any], tracker=None) -> str:
     train_ds = pref_ds.select(range(len(pref_ds) - val_n))
     val_ds = pref_ds.select(range(len(pref_ds) - val_n, len(pref_ds)))
 
-    model, tokenizer = build_qlora_model(cfg["model"], cfg["lora"], cfg["bnb"])
+    # Load the SFT adapter as the DPO policy starting point — not a fresh LoRA.
+    # build_qlora_model initialises lora_B to zero; starting DPO from there means
+    # the policy never benefits from SFT training.
+    model, tokenizer = _load_sft_as_dpo_policy(sft_checkpoint, cfg)
 
     dpo_config = DPOConfig(
         output_dir=t["output_dir"],
@@ -140,6 +153,51 @@ def run_dpo(cfg: dict[str, Any], tracker=None) -> str:
         tracker.finish()
 
     return str(best_dir)
+
+
+def _load_sft_as_dpo_policy(sft_checkpoint: str, cfg: dict[str, Any]):
+    """Load the SFT adapter onto the quantised base model for use as the DPO policy.
+
+    This preserves the SFT adapter weights (non-zero lora_B) so DPO refines them
+    rather than re-learning from a zero-initialised adapter.
+    """
+    import json as _json
+    from pathlib import Path as _Path
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+    model_cfg = cfg["model"]
+    bnb_cfg = cfg["bnb"]
+
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=bnb_cfg.get("load_in_4bit", True),
+        bnb_4bit_quant_type=bnb_cfg.get("bnb_4bit_quant_type", "nf4"),
+        bnb_4bit_use_double_quant=bnb_cfg.get("bnb_4bit_use_double_quant", True),
+        bnb_4bit_compute_dtype=getattr(torch, bnb_cfg.get("bnb_4bit_compute_dtype", "bfloat16")),
+    )
+
+    adapter_cfg_path = _Path(sft_checkpoint) / "adapter_config.json"
+    if adapter_cfg_path.exists():
+        adapter_cfg = _json.loads(adapter_cfg_path.read_text())
+        base_name = adapter_cfg["base_model_name_or_path"]
+    else:
+        base_name = model_cfg["name"]
+
+    tokenizer = AutoTokenizer.from_pretrained(sft_checkpoint)
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    from peft import prepare_model_for_kbit_training
+    base = AutoModelForCausalLM.from_pretrained(
+        base_name,
+        quantization_config=bnb_config,
+        device_map="auto",
+        trust_remote_code=model_cfg.get("trust_remote_code", False),
+    )
+    base = prepare_model_for_kbit_training(base)
+    model = PeftModel.from_pretrained(base, sft_checkpoint, is_trainable=True)
+
+    return model, tokenizer
 
 
 def _load_preference_dataset(path: str) -> list[dict]:
