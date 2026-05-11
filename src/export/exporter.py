@@ -69,6 +69,9 @@ def export_gguf(
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     convert_script = Path(llama_cpp_dir) / "convert_hf_to_gguf.py"
+    if not convert_script.exists():
+        print(f"  [export] llama.cpp not found at {llama_cpp_dir} — skipping GGUF export")
+        return {}
     f32_path = Path(output_dir) / "model_f32.gguf"
 
     subprocess.run(
