@@ -70,8 +70,21 @@ def precompute_reference_log_probs(
 
 def run_dpo(cfg: dict[str, Any], tracker=None) -> str:
     """Train DPO model; returns path to best checkpoint."""
+    import inspect
     from datasets import Dataset
     from trl import DPOConfig, DPOTrainer
+
+    # TRL 0.10–0.11 has get_batch_samples(model, batch) for online generation.
+    # transformers 4.48+ added get_batch_samples(epoch_iterator, num_batches) to the
+    # base Trainer and calls it in _inner_training_loop — the signatures collide.
+    # We never use generate_during_eval so remove TRL's override, letting the base
+    # Trainer's implementation handle batch iteration correctly.
+    _trl_gbs = getattr(DPOTrainer, "get_batch_samples", None)
+    if _trl_gbs and "model" in str(inspect.signature(_trl_gbs)):
+        try:
+            del DPOTrainer.get_batch_samples
+        except (AttributeError, TypeError):
+            pass
 
     seed = cfg.get("reproducibility", {}).get("seed", 42)
     set_seeds(seed)
