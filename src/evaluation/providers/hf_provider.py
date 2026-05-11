@@ -62,6 +62,9 @@ class HFNativeProvider:
                 new_tokens = seq[prompt_len:]
                 results.append(self._tokenizer.decode(new_tokens, skip_special_tokens=True))
 
+            del inputs, outputs
+            torch.cuda.empty_cache()
+
             done = min(batch_start + batch_size, total)
             if done % log_every == 0 or done == total:
                 print(f"  [hf_provider] {done}/{total} examples generated")
