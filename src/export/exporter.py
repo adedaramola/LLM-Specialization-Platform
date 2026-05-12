@@ -19,7 +19,8 @@ def export_adapter(
     dst = Path(output_dir)
     dst.mkdir(parents=True, exist_ok=True)
     for f in src.glob("*"):
-        shutil.copy2(f, dst / f.name)
+        if f.is_file():
+            shutil.copy2(f, dst / f.name)
     return str(dst)
 
 
