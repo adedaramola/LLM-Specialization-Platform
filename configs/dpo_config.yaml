@@ -63,6 +63,7 @@ training:
 # Preference dataset construction
 preference_data:
   completions_per_prompt: 6         # generate 4–8 per prompt from SFT model
+  base_completions_per_prompt: 4    # completions from base model (--use-base-for-rejected)
   target_pairs: 1000                # lowered: well-trained SFT produces fewer differential pairs
   val_fraction: 0.1
   null_case_fraction: 0.20          # oversample null cases — high-leverage for DPO
@@ -71,3 +72,8 @@ preference_data:
   # Ranking strategy: deterministic (schema validator) > programmatic > llm_judge
   ranking_strategy: "deterministic"
   llm_judge_model: null             # only used if ranking_strategy = "llm_judge"
+  # Minimum score margin to emit a pair. SFT-vs-SFT pairs cluster around 0.5–0.7;
+  # set to 1.0 to keep only pairs with a meaningful quality gap. With
+  # --use-base-for-rejected, base model outputs score ~1.5–2.5 so 0.5 is sufficient.
+  min_margin: 0.5                   # keeps ~59% of SFT-vs-SFT pairs (mean margin 0.92)
+                                    # lower is fine with --use-base-for-rejected (base scores ~1.5–2.5)

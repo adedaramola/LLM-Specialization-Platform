@@ -92,6 +92,15 @@ def main() -> None:
         action="store_true",
         help="Print plan without loading model or generating completions",
     )
+    parser.add_argument(
+        "--use-base-for-rejected",
+        action="store_true",
+        help=(
+            "Generate rejected completions from the base model instead of the SFT model. "
+            "Base model outputs score ~1.5–2.5 vs SFT ~3.5–4.0, giving large reliable margins. "
+            "Recommended when SFT-only pairs have mean margin < 0.7."
+        ),
+    )
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -137,7 +146,9 @@ def main() -> None:
     model, tokenizer = _load_sft_model(sft_checkpoint, cfg)
 
     prompts = [ex["prompt"] for ex in sampled]
-    print("Generating completions...")
+    min_margin = pref_cfg.get("min_margin", 0.5)
+
+    print("Generating SFT completions (chosen candidates)...")
     all_completions = generate_completions_batch(
         model=model,
         tokenizer=tokenizer,
@@ -148,9 +159,41 @@ def main() -> None:
         batch_size=pref_cfg.get("generation_batch_size", 8),
     )
 
+    base_completions = None
+    if args.use_base_for_rejected:
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer as _Tok
+        base_model_name = cfg["model"]["name"]
+        print(f"Loading base model for rejected completions: {base_model_name}")
+        base_tok = _Tok.from_pretrained(base_model_name)
+        if base_tok.pad_token is None:
+            base_tok.pad_token = base_tok.eos_token
+        base_mdl = AutoModelForCausalLM.from_pretrained(
+            base_model_name, device_map="auto", torch_dtype=torch.bfloat16,
+            trust_remote_code=cfg["model"].get("trust_remote_code", False),
+        )
+        base_mdl.eval()
+        print("Generating base model completions (rejected candidates)...")
+        base_completions = generate_completions_batch(
+            model=base_mdl,
+            tokenizer=base_tok,
+            prompts=prompts,
+            completions_per_prompt=pref_cfg.get("base_completions_per_prompt",
+                                                 pref_cfg["completions_per_prompt"]),
+            max_new_tokens=cfg["training"].get("max_new_tokens", 256),
+            temperature=pref_cfg.get("generation_temperature", 0.8),
+            batch_size=pref_cfg.get("generation_batch_size", 8),
+        )
+        del base_mdl
+        torch.cuda.empty_cache()
+        min_margin = pref_cfg.get("min_margin", 0.5)  # smaller ok; base outputs are clearly worse
+        print(f"Base model completions generated. min_margin={min_margin}")
+
     pairs = build_preference_pairs(
         sampled, all_completions, schema,
         seed=cfg.get("reproducibility", {}).get("seed", 42),
+        min_margin=min_margin,
+        base_completions=base_completions,
     )
     print(f"Built {len(pairs)} preference pairs from {len(sampled)} prompts")
 

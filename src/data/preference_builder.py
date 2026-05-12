@@ -81,6 +81,8 @@ def build_preference_pairs(
     all_completions: list[list[str]],
     schema: dict,
     seed: int = 42,
+    min_margin: float = 0.0,
+    base_completions: list[list[str]] | None = None,
 ) -> list[dict]:
     """
     Build (chosen, rejected) pairs from multiple completions per prompt.
@@ -91,30 +93,53 @@ def build_preference_pairs(
     as the rejected response — a hallucinated extraction on a null prompt is the
     exact failure mode DPO is being used to suppress. These are marked
     synthetic_rejected=True in the output for transparency.
+
+    Args:
+        min_margin: discard pairs where chosen_score - rejected_score < min_margin.
+            A well-trained SFT model generates completions that score 3.5–4.0,
+            so SFT-vs-SFT pairs have small margins (~0.5) and add noise to DPO.
+            Set min_margin=1.0 when using SFT completions only; lower to 0.5 when
+            base_completions are supplied (base model outputs score ~1.5–2.5).
+        base_completions: if supplied, completions from the base (untuned) model
+            used as the rejected candidate pool for positive-case pairs. Base model
+            outputs are clearly worse than SFT (score ~1.5–2.5 vs SFT ~3.5–4.0),
+            giving reliable large margins without needing a high min_margin.
     """
     rng = random.Random(seed)
     pairs: list[dict] = []
     unpaired_null_cases: list[tuple[dict, str, float]] = []
     positive_completions: list[str] = []
 
-    for example, completions in zip(examples, all_completions):
+    for i, (example, completions) in enumerate(zip(examples, all_completions)):
         is_null = example.get("is_null_case", False)
 
         ref_completion = example.get("completion", "")
         ref_obj, ref_ok = _parse_json_safe(ref_completion)
         reference_entities = ref_obj.get("entities", []) if ref_ok else None
 
-        candidates = completions + ([ref_completion] if ref_ok else [])
-        scored = [
+        # Chosen candidates: SFT completions + reference answer
+        chosen_candidates = completions + ([ref_completion] if ref_ok else [])
+        chosen_scored = [
             (c, score_completion(c, is_null, schema, reference_entities))
-            for c in candidates
+            for c in chosen_candidates
         ]
-        scored.sort(key=lambda x: x[1], reverse=True)
+        chosen_scored.sort(key=lambda x: x[1], reverse=True)
+        best_text, best_score = chosen_scored[0]
 
-        best_text, best_score = scored[0]
+        # Rejected candidates: base model completions (if supplied), otherwise SFT completions
+        if base_completions is not None and not is_null:
+            rejected_pool = [
+                (c, score_completion(c, is_null, schema, reference_entities))
+                for c in base_completions[i]
+            ]
+            rejected_pool.sort(key=lambda x: x[1])  # ascending: take the worst
+        else:
+            rejected_pool = list(reversed(chosen_scored))  # worst first
+
         pair_built = False
-        for worst_text, worst_score in reversed(scored):
-            if worst_score < best_score:
+        for worst_text, worst_score in rejected_pool:
+            margin = best_score - worst_score
+            if margin >= max(min_margin, 1e-9):
                 pairs.append({
                     "prompt": example["prompt"],
                     "chosen": best_text,
