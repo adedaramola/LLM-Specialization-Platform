@@ -8,23 +8,38 @@ class HFNativeProvider:
     name = "hf_native"
 
     def __init__(self, model_path: str, cfg: dict[str, Any]):
+        import json
         import torch
+        from pathlib import Path
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
         dtype_map = {"bfloat16": torch.bfloat16, "float16": torch.float16, "float32": torch.float32}
         torch_dtype = dtype_map.get(cfg.get("torch_dtype", "bfloat16"), torch.bfloat16)
+        device_map = cfg.get("device_map", "auto")
 
-        self._tokenizer = AutoTokenizer.from_pretrained(model_path)
+        adapter_cfg_path = Path(model_path) / "adapter_config.json"
+        if adapter_cfg_path.exists():
+            # Explicit PEFT load — AutoModelForCausalLM.from_pretrained silently skips
+            # applying the LoRA weights in some transformers versions.
+            from peft import PeftModel
+            adapter_cfg = json.loads(adapter_cfg_path.read_text())
+            base_name = adapter_cfg["base_model_name_or_path"]
+            self._tokenizer = AutoTokenizer.from_pretrained(model_path)
+            base = AutoModelForCausalLM.from_pretrained(
+                base_name, device_map=device_map, torch_dtype=torch_dtype,
+            )
+            self._model = PeftModel.from_pretrained(base, model_path)
+        else:
+            self._tokenizer = AutoTokenizer.from_pretrained(model_path)
+            self._model = AutoModelForCausalLM.from_pretrained(
+                model_path, device_map=device_map, torch_dtype=torch_dtype,
+            )
+
         # Left-pad so all sequences in a batch align at the right (generation side)
         self._tokenizer.padding_side = "left"
         if self._tokenizer.pad_token_id is None:
             self._tokenizer.pad_token_id = self._tokenizer.eos_token_id
 
-        self._model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            device_map=cfg.get("device_map", "auto"),
-            torch_dtype=torch_dtype,
-        )
         self._model.eval()
 
     def generate(self, prompts: list[str], gen_cfg: dict[str, Any]) -> list[str]:
