@@ -44,11 +44,25 @@ baseline:
 tokenizer-audit:
 	python scripts/tokenizer_audit.py --config $(CONFIG)
 
+# Build args: INSTALL_TRAIN=1 adds trl/datasets/bitsandbytes; INSTALL_GGUF=1 adds llama.cpp + llama-cpp-python
 docker-build:
-	docker build -t llm-specialization:latest .
+	docker build -t llm-specialization:latest \
+	  --build-arg INSTALL_TRAIN=1 \
+	  --build-arg INSTALL_GGUF=1 \
+	  .
+
+docker-build-eval:
+	docker build -t llm-specialization:eval \
+	  .
 
 docker-run:
-	docker run --gpus all --rm -v $(PWD):/workspace llm-specialization:latest make train CONFIG=$(CONFIG)
+	docker run --gpus all --rm \
+	  -e SFT_CONFIG=$(SFT_CONFIG) \
+	  -e DPO_CONFIG=$(DPO_CONFIG) \
+	  -e MAKE_TARGET=train \
+	  -v $(PWD)/artifacts:/workspace/artifacts \
+	  -v $(PWD)/data:/workspace/data \
+	  llm-specialization:latest
 
 test:
 	python3 -m pytest tests/ -v --cov=src --cov-report=term-missing

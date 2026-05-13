@@ -1,0 +1,13 @@
+.git
+artifacts/
+data/
+runs/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+.claude/
+llm-spcialization-platform
+llm-spcialization-platform.pub
