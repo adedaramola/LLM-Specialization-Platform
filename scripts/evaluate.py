@@ -181,15 +181,19 @@ def main():
     # Report generation — fill model card template with actual metrics
     report_path = cfg.get("output", {}).get("report_path")
     if report_path:
-        dpo_manifest = Path(cfg.get("training", {}).get("output_dir", "./artifacts/dpo")) / "manifest.json"
-        sft_manifest = Path("./artifacts/sft/manifest.json")
-        manifest_path = str(dpo_manifest) if dpo_manifest.exists() else (
-            str(sft_manifest) if sft_manifest.exists() else None
-        )
+        _dpo_manifest = Path(cfg.get("training", {}).get("output_dir", "./artifacts/dpo")) / "manifest.json"
+        _sft_manifest = Path("./artifacts/sft/manifest.json")
+        _pref_manifest = Path(
+            cfg.get("preference_data", {}).get("preference_cache", "./artifacts/dpo/preference_dataset")
+        ) / "generation_manifest.json"
         generate_report(
             template_path="templates/model_card.md",
             metrics_json_path=cfg["output"]["metrics_json"],
-            manifest_path=manifest_path,
+            manifest_path=str(_dpo_manifest) if _dpo_manifest.exists() else (
+                str(_pref_manifest) if _pref_manifest.exists() else None
+            ),
+            sft_manifest_path=str(_sft_manifest) if _sft_manifest.exists() else None,
+            sft_config_path="configs/sft_config.yaml",
             config=cfg,
             output_path=report_path,
         )

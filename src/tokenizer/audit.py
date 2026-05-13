@@ -39,6 +39,7 @@ STRUCTURED_PROBES = [
 @dataclass
 class TokenizerAuditReport:
     model_name: str
+    tokenizer_class: str
     vocab_size: int
     has_bos: bool
     has_eos: bool
@@ -53,6 +54,7 @@ class TokenizerAuditReport:
     def to_dict(self) -> dict:
         return {
             "model_name": self.model_name,
+            "tokenizer_class": self.tokenizer_class,
             "vocab_size": self.vocab_size,
             "has_bos": self.has_bos,
             "has_eos": self.has_eos,
@@ -129,6 +131,7 @@ def audit_tokenizer(model_name_or_path: str) -> TokenizerAuditReport:
 
     return TokenizerAuditReport(
         model_name=model_name_or_path,
+        tokenizer_class=type(tok).__name__,
         vocab_size=tok.vocab_size,
         has_bos=tok.bos_token is not None,
         has_eos=tok.eos_token is not None,
