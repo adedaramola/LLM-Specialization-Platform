@@ -5,6 +5,8 @@
 # Usage:
 #   bash scripts/setup_instance.sh            # eval-only (vLLM + peft + data libs)
 #   bash scripts/setup_instance.sh --train    # eval + full training stack
+#   bash scripts/setup_instance.sh --gguf     # eval + llama-cpp-python with CUDA (for GGUF eval)
+#   bash scripts/setup_instance.sh --train --gguf  # full stack
 #
 # After setup, activate the venv before running any script:
 #   source ~/vllm-env/bin/activate
@@ -12,7 +14,11 @@
 set -euo pipefail
 
 TRAIN_MODE=false
-for arg in "$@"; do [[ "$arg" == "--train" ]] && TRAIN_MODE=true; done
+GGUF_MODE=false
+for arg in "$@"; do
+    [[ "$arg" == "--train" ]] && TRAIN_MODE=true
+    [[ "$arg" == "--gguf" ]]  && GGUF_MODE=true
+done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VENV="$HOME/vllm-env"
@@ -36,6 +42,13 @@ if [[ "$TRAIN_MODE" == "true" ]]; then
     pip install "wandb>=0.18.0" -q
 fi
 
+if [[ "$GGUF_MODE" == "true" ]]; then
+    echo "==> Installing llama-cpp-python with CUDA support (for GGUF eval)"
+    # Must be built from source against the local CUDA toolkit.
+    # CMAKE_ARGS selects the CUDA backend; FORCE_CMAKE skips the pre-built wheel.
+    CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install "llama-cpp-python==0.3.9" -q
+fi
+
 echo "==> Setting up pyairports stub (PyPI 0.0.1 is a squatter, not the real package)"
 PYAIR="$HOME/.local/lib/python3.10/site-packages/pyairports"
 mkdir -p "$PYAIR"
@@ -57,5 +70,5 @@ echo "    --model artifacts/export/merged_bf16 --dtype bfloat16 --port 8000 \\"
 echo "    > /tmp/vllm_server.log 2>&1 &"
 echo "  # 2. Run eval (wait for server ready first)"
 echo "  USE_TF=0 TF_CPP_MIN_LOG_LEVEL=3 python3 -u scripts/evaluate.py \\"
-echo "    --config configs/eval_config_vllm.yaml --mode post-export --post-export \\"
+echo "    --config configs/eval_config.yaml --mode post-export --post-export \\"
 echo "    --merge-existing artifacts/eval/metrics.json"

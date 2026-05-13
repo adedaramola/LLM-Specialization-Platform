@@ -57,7 +57,7 @@ export_artifacts:
     runtime: "hf_native"
   merged_bf16:
     path: "./artifacts/export/merged_bf16"
-    runtime: "hf_native"
+    runtime: "vllm"               # 15 GB model — must serve via vLLM, not load in-process
   gguf_q8:
     path: "./artifacts/export/gguf/model_q8_0.gguf"
     runtime: "llama_cpp"

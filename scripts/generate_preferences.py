@@ -160,7 +160,8 @@ def main() -> None:
     )
 
     base_completions = None
-    if args.use_base_for_rejected:
+    use_base_for_rejected = args.use_base_for_rejected or pref_cfg.get("use_base_for_rejected", False)
+    if use_base_for_rejected:
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer as _Tok
         base_model_name = cfg["model"]["name"]

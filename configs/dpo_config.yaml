@@ -77,3 +77,4 @@ preference_data:
   # --use-base-for-rejected, base model outputs score ~1.5–2.5 so 0.5 is sufficient.
   min_margin: 0.5                   # keeps ~59% of SFT-vs-SFT pairs (mean margin 0.92)
                                     # lower is fine with --use-base-for-rejected (base scores ~1.5–2.5)
+  use_base_for_rejected: true       # use base model outputs as rejected pool (high-margin signal)
