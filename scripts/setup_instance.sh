@@ -28,10 +28,12 @@ pip install -r "$EVAL_LOCK" -q
 
 if [[ "$TRAIN_MODE" == "true" ]]; then
     echo "==> Installing training stack on top of eval stack"
-    # TRL 0.15.2 must be installed --no-deps to avoid downgrading transformers
-    pip install "trl==0.15.2" --no-deps -q
+    # trl 1.4.0 --no-deps: avoids downgrading transformers 5.x installed by vLLM
+    # datasets and bitsandbytes kept out of eval lock to avoid fsspec conflicts
+    pip install "trl==1.4.0" --no-deps -q
+    pip install "datasets==4.8.5" -q
+    pip install "bitsandbytes==0.49.2" -q
     pip install "wandb>=0.18.0" -q
-    pip install bitsandbytes -q
 fi
 
 echo "==> Setting up pyairports stub (PyPI 0.0.1 is a squatter, not the real package)"
