@@ -44,9 +44,11 @@ fi
 
 if [[ "$GGUF_MODE" == "true" ]]; then
     echo "==> Installing llama-cpp-python with CUDA support (for GGUF eval)"
-    # Must be built from source against the local CUDA toolkit.
-    # CMAKE_ARGS selects the CUDA backend; FORCE_CMAKE skips the pre-built wheel.
-    CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install "llama-cpp-python==0.3.9" -q
+    # Use the prebuilt cu125 wheel — cu125 is the highest CUDA variant published by abetlen
+    # and is runtime-compatible with CUDA 12.8 (the GPU driver provides the actual runtime).
+    # This avoids a ~5 min source compile and matches the version in the Dockerfile.
+    pip install "llama-cpp-python==0.3.23" \
+        --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu125 -q
 fi
 
 echo "==> Setting up pyairports stub (PyPI 0.0.1 is a squatter, not the real package)"

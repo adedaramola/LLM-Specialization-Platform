@@ -186,12 +186,34 @@ bash scripts/start_eval.sh --gguf --merge-existing
 ### Docker (on GPU Linux host)
 
 ```bash
-# Full image: eval + training + GGUF stacks
+# Build full image: eval + training + GGUF stacks
 make docker-build
 
 # Run training (artifacts/ and data/ are mounted as volumes)
 make docker-run
+
+# Tag and push to Docker Hub
+docker tag llm-specialization:latest <dockerhub-username>/llm-specialization:latest
+docker push <dockerhub-username>/llm-specialization:latest
+
+# Pull and run on another machine
+docker pull <dockerhub-username>/llm-specialization:latest
+docker run --gpus all --rm \
+  -v $(pwd)/artifacts:/workspace/artifacts \
+  -v $(pwd)/data:/workspace/data \
+  <dockerhub-username>/llm-specialization:latest
 ```
+
+**Build args:**
+
+| Arg | Default | Effect |
+|---|---|---|
+| `INSTALL_TRAIN=1` | off | Adds trl, datasets, bitsandbytes, wandb (required for `make train`) |
+| `INSTALL_GGUF=1` | off | Adds llama-cpp-python 0.3.23 with CUDA (prebuilt cu125 wheel, no source compile) |
+
+**Base image:** `nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04`. Requires NVIDIA driver ≥ 520 on the host and [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html).
+
+**Note:** `llama-cpp-python` uses a prebuilt cu125 wheel (highest CUDA variant published upstream). cu125 wheels are runtime-compatible with CUDA 12.8 — no source compilation required at build time.
 
 ### Local (tests and linting only — no GPU required)
 
