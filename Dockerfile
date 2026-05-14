@@ -9,8 +9,8 @@
 #
 # Build args:
 #   INSTALL_TRAIN=1   also install trl/datasets/bitsandbytes/wandb (training stack)
-#   INSTALL_GGUF=1    also build llama.cpp binary + llama-cpp-python (GGUF eval)
-FROM nvidia/cuda:12.8.0-cudnn9-devel-ubuntu22.04
+#   INSTALL_GGUF=1    install llama-cpp-python with CUDA (GGUF eval)
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
 
 LABEL maintainer="LLM-Specialization-Platform"
 LABEL cuda_version="12.8"
@@ -54,14 +54,9 @@ RUN if [ "$INSTALL_TRAIN" = "1" ]; then \
         pip install --no-cache-dir "wandb>=0.18.0"; \
     fi
 
-# llama.cpp binary (for GGUF conversion) + llama-cpp-python (for GGUF eval)
-# Pinned to a known-good commit; update together with llama-cpp-python version.
-# DGGML_CUDA=ON replaced the old DLLAMA_CUBLAS=ON flag in llama.cpp >=b3000.
+# llama-cpp-python with CUDA — builds its own embedded llama.cpp.
+# Eval harness uses Python bindings only; no CLI build needed.
 RUN if [ "$INSTALL_GGUF" = "1" ]; then \
-        git clone --depth 1 --branch b5316 https://github.com/ggerganov/llama.cpp /opt/llama.cpp && \
-        cmake -S /opt/llama.cpp -B /opt/llama.cpp/build -DGGML_CUDA=ON -DCMAKE_BUILD_TYPE=Release && \
-        cmake --build /opt/llama.cpp/build -j$(nproc) && \
-        pip install --no-cache-dir /opt/llama.cpp/gguf-py && \
         CMAKE_ARGS="-DGGML_CUDA=on" FORCE_CMAKE=1 pip install --no-cache-dir "llama-cpp-python==0.3.9"; \
     fi
 
