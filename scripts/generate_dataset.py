@@ -34,6 +34,8 @@ load_dotenv()
 
 import anthropic
 
+from src.data.labeling import LABELING_RULES, PROMPT_VERSION, validate_labeled_output
+
 
 def _check_api_key() -> None:
     key = os.environ.get("ANTHROPIC_API_KEY", "")
@@ -48,29 +50,24 @@ def _check_api_key() -> None:
 MODEL = "claude-haiku-4-5"
 MAX_TOKENS = 512
 
-SYSTEM_PROMPT = """You generate synthetic news article snippets paired with structured entity-extraction labels for a fine-tuning dataset.
+SYSTEM_PROMPT = f"""You generate synthetic news article snippets paired with structured entity-extraction labels for a fine-tuning dataset.
 
 Each response must be a JSON object with exactly this schema:
-{
+{{
   "input": "<a realistic 2-4 sentence news article snippet>",
-  "output": {
+  "output": {{
     "null_extraction": <boolean>,
     "entities": [
-      {"name": "<entity name>", "type": "<entity type>", "value": "<normalized value>"}
+      {{"name": "...", "type": "...", "value": "..."}}
     ]
-  }
-}
+  }}
+}}
 
-Entity types you may use: person, organization, location, metric, date, event.
-
-Rules:
+{LABELING_RULES}
+Additional generation rules:
 - null_extraction must be true when the snippet contains no specific extractable entities (editorial opinions, vague commentary, philosophical musings).
-- When null_extraction is false, entities must contain at least one item.
-- Do NOT include the "confidence" field.
 - Names should be realistic but fictional (no real living public figures for persons).
-- Metrics must have units in the value (e.g., "4.2%", "$1.3B", "12,000 jobs").
-- Dates use ISO-8601 format in the value field (e.g., "2024-03-15").
-- Events are named occurrences (elections, summits, disasters, ceremonies).
+- Do NOT include a "confidence" field.
 - Return only valid JSON — no markdown, no explanation."""
 
 POSITIVE_PROMPTS = [
@@ -130,12 +127,20 @@ def generate_example(client: anthropic.Anthropic, user_prompt: str) -> dict | No
         text = response.content[0].text.strip()
         example = json.loads(text)
         _validate_example(example)
+        # Provenance required by the run manifest / model card: which model
+        # and prompt version produced this label.
+        example["metadata"] = {
+            "generation_model": MODEL,
+            "prompt_version": PROMPT_VERSION,
+        }
         return example
-    except (json.JSONDecodeError, KeyError, ValueError):
+    except (json.JSONDecodeError, KeyError, ValueError, AssertionError):
         return None
     except anthropic.RateLimitError:
         time.sleep(10)
         return None
+    except anthropic.AuthenticationError:
+        raise SystemExit("ERROR: Anthropic API key rejected (401). Check ANTHROPIC_API_KEY in .env.")
     except anthropic.APIError:
         return None
 
@@ -143,12 +148,9 @@ def generate_example(client: anthropic.Anthropic, user_prompt: str) -> dict | No
 def _validate_example(example: dict) -> None:
     assert "input" in example and isinstance(example["input"], str)
     assert "output" in example
-    out = example["output"]
-    assert "null_extraction" in out and isinstance(out["null_extraction"], bool)
-    if not out["null_extraction"]:
-        assert "entities" in out and len(out["entities"]) >= 1
-        for ent in out["entities"]:
-            assert "name" in ent and "type" in ent and "value" in ent
+    # Grounding contract: every entity must be derivable verbatim from the
+    # input text. Ungrounded labels are unlearnable and cap field F1.
+    validate_labeled_output(example["output"], example["input"])
 
 
 def generate_batch(

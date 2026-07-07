@@ -6,6 +6,9 @@ artifacts that the next phase consumes.
 ## Phase order
 
 ```
+generate_dataset.py       Phase 0a — synthesize raw dataset (v2 labeling contract)
+relabel_dataset.py        Phase 0a — relabel an existing raw dataset under the v2 contract
+audit_labels.py           Phase 0a — gate: fail if labels are not grounded in the text
 prepare_dataset.py        Phase 0a — build, split, decontaminate, hash dataset
 tokenizer_audit.py        Phase 0b — verify tokenizer handles task syntax
 train_sft.py              Phase 1  — QLoRA supervised fine-tuning

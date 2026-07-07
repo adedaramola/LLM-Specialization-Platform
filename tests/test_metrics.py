@@ -88,3 +88,34 @@ class TestExactMatch:
 
     def test_mismatch(self):
         assert exact_match(['{"null_extraction": true}'], ['{"null_extraction": false}']) == 0.0
+
+
+class TestMetricRobustness:
+    def test_garbage_is_not_abstention(self):
+        # Unparsable output on a null case must NOT count as correct abstention
+        result = null_accuracy(["not json at all"], [True])
+        assert result["null_accuracy"] == 0.0
+        assert result["fp"] == 1
+
+    def test_double_parse_failure_is_not_exact_match(self):
+        assert exact_match(["garbage"], ["also garbage"]) == 0.0
+
+    def test_field_f1_normalizes_case_and_whitespace(self):
+        pred = json.dumps({"null_extraction": False, "entities": [{"name": "acme  corp", "type": "organization", "value": "ACME Corp"}]})
+        ref = json.dumps({"null_extraction": False, "entities": [{"name": "Acme Corp", "type": "organization", "value": "acme corp"}]})
+        assert field_level_f1([pred], [ref], [False])["field_f1"] == 1.0
+
+    def test_field_f1_duplicate_names_not_collapsed(self):
+        # Two identical reference entities: predicting only one is recall 0.5, not 1.0
+        ent = {"name": "a", "type": "t", "value": "v"}
+        ref = json.dumps({"null_extraction": False, "entities": [ent, ent]})
+        pred = json.dumps({"null_extraction": False, "entities": [ent]})
+        result = field_level_f1([pred], [ref], [False])
+        assert result["field_recall"] == 0.5
+        assert result["field_precision"] == 1.0
+
+    def test_field_f1_unparsable_reference_excluded(self):
+        good = json.dumps({"null_extraction": False, "entities": [{"name": "a", "type": "t", "value": "v"}]})
+        # One good pair + one broken reference: average over the 1 valid pair
+        result = field_level_f1([good, good], [good, "broken ref"], [False, False])
+        assert result["field_f1"] == 1.0

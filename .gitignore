@@ -15,3 +15,9 @@ mlruns/
 *.egg-info/
 dist/
 build/
+
+# SSH keys must never be committed
+llm-spcialization-platform
+llm-spcialization-platform.pub
+*.pem
+id_ed25519*

@@ -38,6 +38,23 @@ Phase 4   Export: LoRA adapters → merged BF16 → GGUF Q8_0 + Q4_K_M → re-ve
 
 ---
 
+## Dataset
+
+| Property | Value |
+|---|---|
+| Total examples | 3,748 (2,998 train / 375 val / 375 test) |
+| Split | 80 / 10 / 10 |
+| Null-case fraction | ~14% across all splits |
+| Source | Synthetically generated (no third-party datasets) |
+| Generation | Prompted completions covering diverse entity types and schema variants |
+| Decontamination | SHA-256 hash deduplication + 8-gram overlap check against frozen test set |
+| Test set | Frozen before any training — never used for model selection |
+| Dataset hash | `525fca99...` (full hash in run manifest) |
+
+**Null cases** are inputs where the correct output is `{"null_extraction": true}` — text that contains nothing matching the extraction schema. They represent ~14% of each split, matching an expected production distribution where not every input triggers an extraction. Null-case metrics are reported separately from positive-case metrics throughout.
+
+---
+
 ## Results
 
 Trained on 2,998 examples (14% null cases), evaluated on a frozen 375-example test set.
@@ -414,6 +431,18 @@ Every training run emits a manifest capturing:
 4. Run: `make train && make export && bash scripts/start_eval.sh`
 
 No code changes required.
+
+---
+
+## Known limitations
+
+- **Field F1 ceiling (~0.47):** The model correctly identifies entity types and values but field-name alignment with the reference schema is inconsistent. This reflects training data distribution — the synthetic dataset used a limited set of field-name conventions. Improving it requires richer schema coverage in the dataset, not more training compute.
+- **Synthetic training data:** The model was trained entirely on synthetically generated examples. Performance on real-world inputs from domains not represented in the training distribution is untested and likely lower.
+- **Constrained decoding required for schema guarantee:** Without `guided_json` or equivalent, the model produces valid JSON ~98.7% of the time but not 100%. For production use, always use vLLM `guided_json`, outlines, or xgrammar.
+- **GGUF constrained decoding not yet evaluated:** GGUF Q8_0 and Q4_K_M results are reported in raw decoding mode only. Constrained decoding (JSON grammar via llama-cpp-python) is supported by the provider but the eval has not been run. Constrained results will be added in a future update.
+- **Null accuracy on test set is perfect (1.0):** While this is a strong result, the null-case distribution in the synthetic test set may not match production traffic exactly. Monitor null accuracy carefully on real inputs before relying on it.
+- **General-capability regression measured on small slices:** MMLU (102 examples) and HellaSwag (100 examples) are indicative, not authoritative. They catch catastrophic forgetting but are too small to detect subtle degradation.
+- **Base model and SFT adapter rows not evaluated:** The results table shows merged BF16 and GGUF only. Base model and SFT adapter eval requires re-running with the original checkpoints from S3.
 
 ---
 

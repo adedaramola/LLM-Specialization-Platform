@@ -44,6 +44,12 @@ baseline:
 tokenizer-audit:
 	python scripts/tokenizer_audit.py --config $(CONFIG)
 
+# Fails when entity labels are not grounded verbatim in the input text —
+# ungrounded labels are unlearnable and cap field F1 (RAW defaults to the v2 dataset)
+RAW ?= data/raw/news_extraction_v2.jsonl
+label-audit:
+	python scripts/audit_labels.py $(RAW)
+
 # Build args: INSTALL_TRAIN=1 adds trl/datasets/bitsandbytes; INSTALL_GGUF=1 adds llama.cpp + llama-cpp-python
 docker-build:
 	docker build -t llm-specialization:latest \

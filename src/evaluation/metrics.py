@@ -5,6 +5,8 @@ type correctness, null-extraction accuracy, tool-calling metrics.
 from __future__ import annotations
 
 import json
+import re
+from collections import Counter
 from typing import Any
 
 import jsonschema
@@ -15,6 +17,12 @@ def _parse_json_safe(text: str) -> tuple[dict | None, bool]:
         return json.loads(text.strip()), True
     except (json.JSONDecodeError, ValueError):
         return None, False
+
+
+def _norm(value: Any) -> str:
+    """Casefold and collapse whitespace so field matching tolerates
+    capitalization and spacing drift, but nothing semantic."""
+    return re.sub(r"\s+", " ", str(value)).strip().casefold()
 
 
 def schema_validity(predictions: list[str], schema: dict) -> float:
@@ -38,7 +46,10 @@ def null_accuracy(
     tp = tn = fp = fn = 0
     for pred_str, is_null in zip(predictions, labels):
         obj, ok = _parse_json_safe(pred_str)
-        pred_null = (not ok) or (isinstance(obj, dict) and obj.get("null_extraction", False))
+        # Abstention must be explicit: {"null_extraction": true}. Unparsable
+        # output is a failure, not an abstention — counting garbage as correct
+        # abstention silently inflates null accuracy.
+        pred_null = ok and isinstance(obj, dict) and obj.get("null_extraction", False)
         if is_null and pred_null:
             tn += 1  # correctly abstained
         elif not is_null and not pred_null:
@@ -72,7 +83,24 @@ def field_level_f1(
     Null cases are excluded: abstention correctness is captured by null_accuracy,
     not by field extraction quality. Including null cases in this metric inflates
     it to exactly the null-case fraction for any model that over-abstains.
+
+    Entities are matched as normalized (name, type, value) triples via multiset
+    intersection: casefolded, whitespace-collapsed, otherwise exact. Multiset
+    matching means duplicate entity names in a reference are not silently
+    collapsed, and normalization tolerates capitalization/spacing drift without
+    crediting semantic differences.
+
+    References that fail to parse are a dataset defect, not a model error —
+    they are excluded from the average rather than scored as 0.
     """
+
+    def _entity_multiset(obj: dict | None) -> Counter:
+        return Counter(
+            (_norm(e["name"]), _norm(e.get("type", "")), _norm(e.get("value", "")))
+            for e in (obj or {}).get("entities", [])
+            if isinstance(e, dict) and "name" in e
+        )
+
     total_p = total_r = total_f1 = 0.0
     n = 0
     for i, (pred_str, ref_str) in enumerate(zip(predictions, references)):
@@ -82,26 +110,16 @@ def field_level_f1(
         pred_obj, pred_ok = _parse_json_safe(pred_str)
         ref_obj, ref_ok = _parse_json_safe(ref_str)
         if not ref_ok:
-            n += 1
             continue
 
-        pred_entities = {
-            e["name"]: (e["type"], e["value"])
-            for e in (pred_obj or {}).get("entities", [])
-            if isinstance(e, dict) and "name" in e
-        } if pred_ok else {}
-        ref_entities = {
-            e["name"]: (e["type"], e["value"])
-            for e in ref_obj.get("entities", [])
-            if isinstance(e, dict) and "name" in e
-        }
+        pred_entities = _entity_multiset(pred_obj) if pred_ok else Counter()
+        ref_entities = _entity_multiset(ref_obj)
 
-        correct = sum(
-            1 for k, v in pred_entities.items()
-            if k in ref_entities and ref_entities[k] == v
-        )
-        p = correct / len(pred_entities) if pred_entities else 0.0
-        r = correct / len(ref_entities) if ref_entities else 0.0
+        correct = sum((pred_entities & ref_entities).values())
+        n_pred = sum(pred_entities.values())
+        n_ref = sum(ref_entities.values())
+        p = correct / n_pred if n_pred else 0.0
+        r = correct / n_ref if n_ref else 0.0
         f1 = 2 * p * r / (p + r) if (p + r) else 0.0
         total_p += p
         total_r += r
@@ -120,10 +138,14 @@ def field_level_f1(
 def exact_match(predictions: list[str], references: list[str]) -> float:
     if not predictions:
         return 0.0
-    matches = sum(
-        _parse_json_safe(p)[0] == _parse_json_safe(r)[0]
-        for p, r in zip(predictions, references)
-    )
+    matches = 0
+    for p, r in zip(predictions, references):
+        pred_obj, pred_ok = _parse_json_safe(p)
+        ref_obj, ref_ok = _parse_json_safe(r)
+        # Both unparsable would compare None == None — that is a double
+        # failure, not a match.
+        if pred_ok and ref_ok and pred_obj == ref_obj:
+            matches += 1
     return matches / len(predictions)
 
 
