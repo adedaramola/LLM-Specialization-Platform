@@ -35,6 +35,7 @@ for arg in "$@"; do
     [[ "$arg" == "--mode" ]]           && true   # handled below
 done
 # Capture --mode value
+prev=""
 for i in "$@"; do
     if [[ "$prev" == "--mode" ]]; then EVAL_MODE="$i"; fi
     prev="$i"

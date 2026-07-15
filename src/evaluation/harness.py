@@ -291,6 +291,8 @@ def emit_metrics_json(
                     output["ci_pass"] = False
 
         model_entry: dict[str, Any] = {
+            "model_path": result.get("model_path", ""),
+            "provider": result.get("provider", ""),
             "raw": raw,
             "constrained": constrained,
             "raw_vs_guided_gap": result.get("raw_vs_guided_gap", {}),

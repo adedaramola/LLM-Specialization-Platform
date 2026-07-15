@@ -162,6 +162,11 @@ def main():
     n_qual = qual_cfg.get("num_samples", 20)
     qual_out = qual_cfg.get("output_path", "./artifacts/eval/qualitative_samples.json")
     if n_qual > 0 and results:
+        # Rows seeded from an older metrics.json may lack model_path — backfill
+        # from config so dpo/sft can win the selection over export artifacts.
+        for r in results:
+            if not r.get("model_path") and r["model"] in cfg.get("models", {}):
+                r["model_path"] = cfg["models"][r["model"]].get("path") or ""
         best_result = next(
             (r for r in reversed(results) if r["model"] in ("dpo", "sft") and r.get("model_path")),
             next((r for r in reversed(results) if r.get("model_path")), None),
@@ -170,24 +175,30 @@ def main():
             print("Skipping qualitative samples: no model with a valid path in results")
             n_qual = 0
         else:
-            print(f"\nCollecting {n_qual} qualitative samples from model: {best_result['model']}")
-            qual_samples = collect_qualitative_samples(
-                model_label=best_result["model"],
-                model_path=best_result["model_path"],
-                test_examples=test_examples,
-                schema=schema,
-                eval_cfg=cfg,
-                n_samples=n_qual,
-                seed=cfg.get("reproducibility", {}).get("seed", 42),
-            )
-            Path(qual_out).parent.mkdir(parents=True, exist_ok=True)
-            with open(qual_out, "w") as f:
-                json.dump(qual_samples, f, indent=2, ensure_ascii=False)
-            by_cat: dict[str, int] = {}
-            for s in qual_samples:
-                by_cat[s["category"]] = by_cat.get(s["category"], 0) + 1
-            print(f"Qualitative samples written to: {qual_out}")
-            print(f"  Category breakdown: {by_cat}")
+            # Non-fatal: metrics.json is the contract; a sampling failure
+            # (e.g. OOM while a vLLM server holds the GPU) must not fail the run
+            # or clobber samples from an earlier pass.
+            try:
+                print(f"\nCollecting {n_qual} qualitative samples from model: {best_result['model']}")
+                qual_samples = collect_qualitative_samples(
+                    model_label=best_result["model"],
+                    model_path=best_result["model_path"],
+                    test_examples=test_examples,
+                    schema=schema,
+                    eval_cfg=cfg,
+                    n_samples=n_qual,
+                    seed=cfg.get("reproducibility", {}).get("seed", 42),
+                )
+                Path(qual_out).parent.mkdir(parents=True, exist_ok=True)
+                with open(qual_out, "w") as f:
+                    json.dump(qual_samples, f, indent=2, ensure_ascii=False)
+                by_cat: dict[str, int] = {}
+                for s in qual_samples:
+                    by_cat[s["category"]] = by_cat.get(s["category"], 0) + 1
+                print(f"Qualitative samples written to: {qual_out}")
+                print(f"  Category breakdown: {by_cat}")
+            except Exception as e:
+                print(f"Qualitative sampling failed (non-fatal): {type(e).__name__}: {e}")
 
     # Report generation — fill model card template with actual metrics
     report_path = cfg.get("output", {}).get("report_path")
