@@ -120,8 +120,11 @@ def run_sft(cfg: dict[str, Any], tracker=None) -> str:
 
     train_data = _load_split(cfg["dataset"]["train_path"])
     val_data = _load_split(cfg["dataset"]["val_path"])
-    train_ds = Dataset.from_list(train_data)
-    val_ds = Dataset.from_list(val_data)
+    # Pre-built "text" column instead of formatting_func — the formatting_func
+    # calling convention changed between TRL versions; a text column behaves
+    # identically on all of them (loss over the full prompt+completion).
+    train_ds = Dataset.from_list([{"text": ex["prompt"] + ex["completion"]} for ex in train_data])
+    val_ds = Dataset.from_list([{"text": ex["prompt"] + ex["completion"]} for ex in val_data])
 
     t = cfg["training"]
     sft_config = SFTConfig(
@@ -138,7 +141,7 @@ def run_sft(cfg: dict[str, Any], tracker=None) -> str:
         bf16=t.get("bf16", True),
         fp16=t.get("fp16", False),
         gradient_checkpointing=t.get("gradient_checkpointing", True),
-        max_seq_length=t.get("max_seq_length", 2048),
+        max_length=t.get("max_seq_length", 2048),
         save_strategy=t.get("save_strategy", "steps"),
         save_steps=t.get("save_steps", 200),
         eval_strategy=t.get("eval_strategy", "steps"),
@@ -151,9 +154,6 @@ def run_sft(cfg: dict[str, Any], tracker=None) -> str:
         packing=False,
         report_to="none",
     )
-
-    def formatting_fn(examples):
-        return [p + c for p, c in zip(examples["prompt"], examples["completion"])]
 
     callbacks = []
     log_steps = t.get("generation_log_steps", 0)
@@ -171,11 +171,10 @@ def run_sft(cfg: dict[str, Any], tracker=None) -> str:
 
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         train_dataset=train_ds,
         eval_dataset=val_ds,
         args=sft_config,
-        formatting_func=formatting_fn,
         callbacks=callbacks or None,
     )
 
