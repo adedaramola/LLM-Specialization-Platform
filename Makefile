@@ -3,6 +3,7 @@
 SFT_CONFIG  ?= configs/sft_config.yaml
 DPO_CONFIG  ?= configs/dpo_config.yaml
 EVAL_CONFIG ?= configs/eval_config.yaml
+RAW         ?= data/raw/news_extraction_v2.jsonl
 
 all: train evaluate export
 
@@ -23,7 +24,7 @@ generate-preferences:
 # Stage 1-3: SFT config drives data prep, tokenizer audit, and SFT training
 # Stage 4-5: DPO config drives preference generation (incl. use_base_for_rejected) and DPO training
 train:
-	python scripts/prepare_dataset.py --config $(SFT_CONFIG)
+	python scripts/prepare_dataset.py --config $(SFT_CONFIG) --raw-data $(RAW)
 	python scripts/tokenizer_audit.py --config $(SFT_CONFIG)
 	python scripts/train_sft.py --config $(SFT_CONFIG)
 	python scripts/generate_preferences.py --config $(DPO_CONFIG)
@@ -46,7 +47,6 @@ tokenizer-audit:
 
 # Fails when entity labels are not grounded verbatim in the input text —
 # ungrounded labels are unlearnable and cap field F1 (RAW defaults to the v2 dataset)
-RAW ?= data/raw/news_extraction_v2.jsonl
 label-audit:
 	python scripts/audit_labels.py $(RAW)
 
