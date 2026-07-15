@@ -73,11 +73,15 @@ def evaluate_model(
         constrained_preds = _constrained_generate(
             provider, prompts, schema, eval_cfg["constrained"], gen_cfg
         )
-        constrained_metrics = compute_all_metrics(
-            constrained_preds, references, null_labels, schema
-        )
-        for k in raw_metrics:
-            raw_vs_guided_gap[f"{k}_gap"] = constrained_metrics.get(k, 0) - raw_metrics.get(k, 0)
+        # None means constrained generation is unavailable for this provider —
+        # leave the block absent so the CI gate falls back to raw, rather than
+        # scoring empty predictions as measured zeros.
+        if constrained_preds is not None:
+            constrained_metrics = compute_all_metrics(
+                constrained_preds, references, null_labels, schema
+            )
+            for k in raw_metrics:
+                raw_vs_guided_gap[f"{k}_gap"] = constrained_metrics.get(k, 0) - raw_metrics.get(k, 0)
 
     return {
         "model": model_label,
@@ -92,7 +96,7 @@ def evaluate_model(
     }
 
 
-def _constrained_generate(provider, prompts, schema, constrained_cfg, gen_cfg) -> list[str]:
+def _constrained_generate(provider, prompts, schema, constrained_cfg, gen_cfg) -> list[str] | None:
     # Prefer provider-native constrained generation (e.g. vLLM guided_json) — batched
     # and no extra dependencies.  Fall through to outlines for hf_native.
     if hasattr(provider, "generate_constrained"):
@@ -107,7 +111,8 @@ def _constrained_generate(provider, prompts, schema, constrained_cfg, gen_cfg) -
             hf_model = getattr(provider, "_model", None)
             hf_tok = getattr(provider, "_tokenizer", None)
             if hf_model is None:
-                return [""] * len(prompts)
+                print("  [constrained] provider exposes no HF model — skipping constrained eval")
+                return None
             om = outlines.models.Transformers(hf_model, hf_tok)
             # outlines 0.0.46 requires the schema as a JSON string, not a dict
             schema_str = json.dumps(schema) if isinstance(schema, dict) else schema
@@ -125,9 +130,10 @@ def _constrained_generate(provider, prompts, schema, constrained_cfg, gen_cfg) -
                     print(f"  [constrained] {i + 1}/{len(prompts)} examples generated")
             return results
         except Exception as e:
-            print(f"  [constrained] setup failed: {type(e).__name__}: {e}")
-            return [""] * len(prompts)
-    return [""] * len(prompts)
+            print(f"  [constrained] setup failed, skipping constrained eval: {type(e).__name__}: {e}")
+            return None
+    print(f"  [constrained] no implementation for backend {backend!r} on this provider — skipping")
+    return None
 
 
 def collect_qualitative_samples(

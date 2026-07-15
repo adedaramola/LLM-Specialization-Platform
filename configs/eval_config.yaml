@@ -106,7 +106,9 @@ metrics:
 regression:
   benchmarks: ["mmlu_tiny", "hellaswag_tiny"]
   mmlu_subjects: ["abstract_algebra", "college_mathematics", "high_school_physics"]
-  num_samples: 100                  # small slice; catches catastrophic forgetting
+  num_samples: 500                  # n=100 has a ±0.05 noise floor — wider than the
+                                    # -0.03 regression threshold it gates; 500 brings
+                                    # the standard error under the threshold
 
 # Qualitative sample logging
 qualitative:
