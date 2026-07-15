@@ -81,7 +81,11 @@ def audit_tokenizer(model_name_or_path: str) -> TokenizerAuditReport:
     issues: list[str] = []
     warnings: list[str] = []
 
-    added_tokens = [t for t in tok.additional_special_tokens if t not in ["<s>", "</s>"]]
+    # Tokenizers with no extra special tokens raise AttributeError here rather
+    # than returning an empty list (e.g. Qwen2Tokenizer on transformers 4.48+).
+    added_tokens = [
+        t for t in getattr(tok, "additional_special_tokens", []) if t not in ["<s>", "</s>"]
+    ]
 
     char_coverage: dict[str, dict[str, Any]] = {}
     byte_fallback_chars: list[str] = []
