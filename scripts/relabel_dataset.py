@@ -55,6 +55,16 @@ Given an input text, respond with a JSON object of exactly this shape:
 Return only valid JSON — no markdown, no explanation."""
 
 
+def _strip_code_fence(text: str) -> str:
+    """The model sometimes wraps output in ```json fences despite instructions."""
+    if text.startswith("```"):
+        text = text[text.index("\n") + 1 :] if "\n" in text else ""
+        text = text.rstrip()
+        if text.endswith("```"):
+            text = text[:-3]
+    return text.strip()
+
+
 def relabel_one(client: anthropic.Anthropic, input_text: str) -> dict | None:
     """Return a validated output object, or None after MAX_ATTEMPTS failures."""
     messages = [{"role": "user", "content": f"Label this text:\n\n{input_text}"}]
@@ -78,7 +88,7 @@ def relabel_one(client: anthropic.Anthropic, input_text: str) -> dict | None:
             )
         except anthropic.APIError:
             continue
-        text = response.content[0].text.strip()
+        text = _strip_code_fence(response.content[0].text.strip())
         try:
             output = json.loads(text)
             validate_labeled_output(output, input_text)

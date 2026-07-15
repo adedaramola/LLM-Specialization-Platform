@@ -40,13 +40,23 @@ def split_dataset(
     ratios: tuple[float, float, float] = (0.8, 0.1, 0.1),
     seed: int = 42,
 ) -> tuple[list, list, list]:
+    """Split stratified by is_null_case so every split keeps the overall null fraction."""
     rng = random.Random(seed)
-    shuffled = examples.copy()
-    rng.shuffle(shuffled)
-    n = len(shuffled)
-    n_train = int(n * ratios[0])
-    n_val = int(n * ratios[1])
-    return shuffled[:n_train], shuffled[n_train : n_train + n_val], shuffled[n_train + n_val :]
+    train: list[dict] = []
+    val: list[dict] = []
+    test: list[dict] = []
+    for is_null in (False, True):
+        pool = [ex for ex in examples if ex.get("is_null_case", False) == is_null]
+        rng.shuffle(pool)
+        n = len(pool)
+        n_train = int(n * ratios[0])
+        n_val = int(n * ratios[1])
+        train.extend(pool[:n_train])
+        val.extend(pool[n_train : n_train + n_val])
+        test.extend(pool[n_train + n_val :])
+    for split in (train, val, test):
+        rng.shuffle(split)
+    return train, val, test
 
 
 def validate_null_fraction(
