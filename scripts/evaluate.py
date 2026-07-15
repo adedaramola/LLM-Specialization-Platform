@@ -133,10 +133,17 @@ def main():
             print(f"Evaluating artifact: {artifact_key}")
             orig_provider = cfg["inference"]["provider"]
             cfg["inference"]["provider"] = artifact_cfg["runtime"]
-            r = evaluate_model(artifact_key, path, test_examples, schema, cfg)
-            cfg["inference"]["provider"] = orig_provider
-            results.append(r)
-            _print_result(r)
+            # One artifact failing (server down, OOM under vLLM) must not kill
+            # the run — a row seeded via --merge-existing survives, and the
+            # remaining artifacts still get evaluated.
+            try:
+                r = evaluate_model(artifact_key, path, test_examples, schema, cfg)
+                results.append(r)
+                _print_result(r)
+            except Exception as e:
+                print(f"  [{artifact_key}] eval failed, skipping: {type(e).__name__}: {e}")
+            finally:
+                cfg["inference"]["provider"] = orig_provider
 
     output = emit_metrics_json(
         results,

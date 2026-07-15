@@ -4,6 +4,10 @@ SFT_CONFIG  ?= configs/sft_config.yaml
 DPO_CONFIG  ?= configs/dpo_config.yaml
 EVAL_CONFIG ?= configs/eval_config.yaml
 RAW         ?= data/raw/news_extraction_v2.jsonl
+# The promoted checkpoint that ships. Without an explicit override export.py
+# falls back to the SFT checkpoint (via sft_checkpoint/output_dir), silently
+# exporting the wrong model.
+EXPORT_CHECKPOINT ?= artifacts/dpo/best
 
 all: train evaluate export
 
@@ -36,7 +40,7 @@ evaluate:
 
 # Export adapters → merged BF16 → GGUF, then re-verify all artifacts
 export:
-	python scripts/export.py --config $(SFT_CONFIG)
+	python scripts/export.py --config $(SFT_CONFIG) --checkpoint $(EXPORT_CHECKPOINT)
 	python scripts/evaluate.py --config $(EVAL_CONFIG) --mode post-export --post-export --merge-existing artifacts/eval/metrics.json
 
 baseline:
