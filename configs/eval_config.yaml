@@ -4,8 +4,11 @@ defaults:
   - base_config
 
 # Inference provider: hf_native | vllm | ollama | tgi
+# hf_native drives the base/SFT/DPO checkpoint comparison (PEFT adapters can't
+# be served by one vLLM server); post-export artifacts override per-artifact
+# via export_artifacts.*.runtime below.
 inference:
-  provider: "vllm"
+  provider: "hf_native"
   # Provider-specific settings (only the active provider is used)
   hf_native:
     device_map: "auto"
@@ -41,7 +44,7 @@ constrained:
 # Models to evaluate
 models:
   base:
-    path: null                      # set to base model name/path
+    path: "Qwen/Qwen2.5-7B-Instruct"  # null skips the baseline row entirely
     label: "base"
   sft:
     path: "./artifacts/sft/best"
