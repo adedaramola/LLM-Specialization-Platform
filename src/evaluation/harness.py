@@ -224,6 +224,7 @@ def emit_metrics_json(
     output_path: str,
     schema_version: str = "1.0.0",
     gate_cfg: dict[str, Any] | None = None,
+    regression: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Emit metrics.json.
 
@@ -239,6 +240,9 @@ def emit_metrics_json(
     gate_mode = gate_cfg.get("mode", "raw")
     fallback_to_raw = gate_cfg.get("fallback_to_raw", True)
     gate_thresholds = gate_cfg.get("thresholds") or thresholds
+    # Reference rows are recorded against the gate for transparency but must
+    # not drive ci_pass — the baseline exists to score badly.
+    exclude_from_gate = set(gate_cfg.get("exclude_from_gate", ["base"]))
 
     def _check(value: float, key: str, thr: dict) -> bool:
         return value >= thr.get(key, 0.0)
@@ -247,8 +251,11 @@ def emit_metrics_json(
         "schema_version": schema_version,
         "ci_gate_mode": gate_mode,
         "models": {},
+        "regression": regression or {},
         "ci_pass": True,
     }
+    if regression and not regression.get("passed", True):
+        output["ci_pass"] = False
 
     for result in results:
         label = result["model"]
@@ -280,7 +287,7 @@ def emit_metrics_json(
             if isinstance(value, float):
                 passed = _check(value, metric_key, gate_thresholds)
                 deployment_pass_fail[metric_key] = {"value": value, "passed": passed}
-                if not passed:
+                if not passed and label not in exclude_from_gate:
                     output["ci_pass"] = False
 
         model_entry: dict[str, Any] = {

@@ -36,12 +36,14 @@ def main():
     test_examples = _load_test(cfg["dataset"]["test_path"])
 
     results = []
+    reg_report = None
     mode = args.mode
 
     # Seed results from an existing metrics.json so prior model evals aren't re-run
     if args.merge_existing and Path(args.merge_existing).exists():
         with open(args.merge_existing) as f:
             existing = json.load(f)
+        reg_report = existing.get("regression") or None
         for label, entry in existing.get("models", {}).items():
             results.append({
                 "model": label,
@@ -116,6 +118,7 @@ def main():
                 base_regression, new_regression,
                 cfg["metrics"]["regression_thresholds"],
             )
+            reg_report["num_samples"] = cfg["regression"]["num_samples"]
             print(f"Regression check passed: {reg_report['passed']}")
             if not reg_report["passed"]:
                 print("REGRESSION DETECTED:", json.dumps(reg_report["deltas"], indent=2))
@@ -141,6 +144,7 @@ def main():
         cfg["output"]["metrics_json"],
         schema_version=cfg["output"].get("metrics_schema_version", "1.0.0"),
         gate_cfg=cfg["metrics"].get("ci_gate"),
+        regression=reg_report,
     )
 
     print(f"\nmetrics.json written to: {cfg['output']['metrics_json']}")

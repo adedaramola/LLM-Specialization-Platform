@@ -86,6 +86,7 @@ metrics:
   ci_gate:
     mode: "constrained"             # "constrained" | "raw"
     fallback_to_raw: true           # if constrained eval was not run, fall back to raw
+    exclude_from_gate: ["base"]     # reference rows recorded but never drive ci_pass
     # Deployment-gate thresholds (override raw thresholds where serving mode changes expectations)
     # Calibrated 2026-05-12 against Qwen2.5-7B-Instruct post-DPO on this dataset.
     # merged_bf16 constrained: field_f1=0.469, schema_validity=0.984, null_accuracy=1.0.
