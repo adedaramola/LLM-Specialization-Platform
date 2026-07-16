@@ -63,6 +63,8 @@ Phase 4   Export: LoRA adapters → merged BF16 → GGUF Q8_0 + Q4_K_M → re-ve
 
 Trained on 2,998 examples (14.9% null cases), evaluated on a frozen 377-example test set. Every row below is the same base model; only fine-tuning and export format differ.
 
+> Recorded outputs from this run — the full `metrics.json` CI contract, generated report, model card, and 20 qualitative samples including failure modes — are committed under [`results/v2/`](results/v2/).
+
 ### Base → SFT → DPO → every shipped artifact
 
 | Model / artifact | Runtime | Field F1 | Exact Match | Schema Validity | Null Accuracy | Decoding |

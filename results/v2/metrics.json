@@ -1,0 +1,739 @@
+{
+  "schema_version": "1.0.0",
+  "ci_gate_mode": "constrained",
+  "models": {
+    "base": {
+      "model_path": "",
+      "provider": "",
+      "raw": {
+        "schema_validity": 0.4005305039787798,
+        "exact_match": 0.0,
+        "field_precision": 0.0,
+        "field_recall": 0.0,
+        "field_f1": 0.0,
+        "precision": 1.0,
+        "recall": 0.70625,
+        "f1": 0.8278388278388279,
+        "null_accuracy": 1.0,
+        "tp": 226,
+        "tn": 57,
+        "fp": 0,
+        "fn": 94
+      },
+      "constrained": {},
+      "raw_vs_guided_gap": {},
+      "pass_fail": {
+        "schema_validity": {
+          "value": 0.4005305039787798,
+          "passed": false
+        },
+        "exact_match": {
+          "value": 0.0,
+          "passed": false
+        },
+        "field_precision": {
+          "value": 0.0,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.0,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.0,
+          "passed": false
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 0.70625,
+          "passed": true
+        },
+        "f1": {
+          "value": 0.8278388278388279,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_pass_fail": {
+        "schema_validity": {
+          "value": 0.4005305039787798,
+          "passed": false
+        },
+        "exact_match": {
+          "value": 0.0,
+          "passed": false
+        },
+        "field_precision": {
+          "value": 0.0,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.0,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.0,
+          "passed": false
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 0.70625,
+          "passed": true
+        },
+        "f1": {
+          "value": 0.8278388278388279,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_gate_mode": "raw"
+    },
+    "sft": {
+      "model_path": "",
+      "provider": "",
+      "raw": {
+        "schema_validity": 1.0,
+        "exact_match": 0.4986737400530504,
+        "field_precision": 0.8972842261904761,
+        "field_recall": 0.8797482638888894,
+        "field_f1": 0.8841709893456221,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "null_accuracy": 1.0,
+        "tp": 320,
+        "tn": 57,
+        "fp": 0,
+        "fn": 0
+      },
+      "constrained": {},
+      "raw_vs_guided_gap": {},
+      "pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.4986737400530504,
+          "passed": false
+        },
+        "field_precision": {
+          "value": 0.8972842261904761,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.8797482638888894,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8841709893456221,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.4986737400530504,
+          "passed": true
+        },
+        "field_precision": {
+          "value": 0.8972842261904761,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.8797482638888894,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8841709893456221,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_gate_mode": "raw"
+    },
+    "dpo": {
+      "model_path": "",
+      "provider": "",
+      "raw": {
+        "schema_validity": 1.0,
+        "exact_match": 0.4960212201591512,
+        "field_precision": 0.8987053571428569,
+        "field_recall": 0.8805778769841275,
+        "field_f1": 0.8854784859748097,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "null_accuracy": 1.0,
+        "tp": 320,
+        "tn": 57,
+        "fp": 0,
+        "fn": 0
+      },
+      "constrained": {},
+      "raw_vs_guided_gap": {},
+      "pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.4960212201591512,
+          "passed": false
+        },
+        "field_precision": {
+          "value": 0.8987053571428569,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.8805778769841275,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8854784859748097,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.4960212201591512,
+          "passed": true
+        },
+        "field_precision": {
+          "value": 0.8987053571428569,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.8805778769841275,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8854784859748097,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_gate_mode": "raw"
+    },
+    "adapter": {
+      "model_path": "",
+      "provider": "",
+      "raw": {
+        "schema_validity": 1.0,
+        "exact_match": 0.4960212201591512,
+        "field_precision": 0.8987053571428569,
+        "field_recall": 0.8805778769841275,
+        "field_f1": 0.8854784859748097,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "null_accuracy": 1.0,
+        "tp": 320,
+        "tn": 57,
+        "fp": 0,
+        "fn": 0
+      },
+      "constrained": {},
+      "raw_vs_guided_gap": {},
+      "pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.4960212201591512,
+          "passed": false
+        },
+        "field_precision": {
+          "value": 0.8987053571428569,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.8805778769841275,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8854784859748097,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.4960212201591512,
+          "passed": true
+        },
+        "field_precision": {
+          "value": 0.8987053571428569,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.8805778769841275,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8854784859748097,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_gate_mode": "raw"
+    },
+    "gguf_q8": {
+      "model_path": "",
+      "provider": "",
+      "raw": {
+        "schema_validity": 1.0,
+        "exact_match": 0.519893899204244,
+        "field_precision": 0.8892150297619054,
+        "field_recall": 0.9006919642857145,
+        "field_f1": 0.8915714692245755,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "null_accuracy": 1.0,
+        "tp": 320,
+        "tn": 57,
+        "fp": 0,
+        "fn": 0
+      },
+      "constrained": {},
+      "raw_vs_guided_gap": {},
+      "pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.519893899204244,
+          "passed": false
+        },
+        "field_precision": {
+          "value": 0.8892150297619054,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.9006919642857145,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8915714692245755,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.519893899204244,
+          "passed": true
+        },
+        "field_precision": {
+          "value": 0.8892150297619054,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.9006919642857145,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8915714692245755,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_gate_mode": "raw"
+    },
+    "gguf_q4": {
+      "model_path": "",
+      "provider": "",
+      "raw": {
+        "schema_validity": 1.0,
+        "exact_match": 0.5251989389920424,
+        "field_precision": 0.8870634920634922,
+        "field_recall": 0.8980654761904763,
+        "field_f1": 0.8889235203113885,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "null_accuracy": 1.0,
+        "tp": 320,
+        "tn": 57,
+        "fp": 0,
+        "fn": 0
+      },
+      "constrained": {},
+      "raw_vs_guided_gap": {},
+      "pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.5251989389920424,
+          "passed": false
+        },
+        "field_precision": {
+          "value": 0.8870634920634922,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.8980654761904763,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8889235203113885,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.5251989389920424,
+          "passed": true
+        },
+        "field_precision": {
+          "value": 0.8870634920634922,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.8980654761904763,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8889235203113885,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_gate_mode": "raw"
+    },
+    "merged_bf16": {
+      "model_path": "./artifacts/export/merged_bf16",
+      "provider": "vllm",
+      "raw": {
+        "schema_validity": 1.0,
+        "exact_match": 0.493368700265252,
+        "field_precision": 0.8968601190476191,
+        "field_recall": 0.8811284722222229,
+        "field_f1": 0.8848008302971545,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "null_accuracy": 1.0,
+        "tp": 320,
+        "tn": 57,
+        "fp": 0,
+        "fn": 0
+      },
+      "constrained": {
+        "schema_validity": 1.0,
+        "exact_match": 0.4907161803713528,
+        "field_precision": 0.8952194940476191,
+        "field_recall": 0.8797482638888894,
+        "field_f1": 0.8832129650374139,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "null_accuracy": 1.0,
+        "tp": 320,
+        "tn": 57,
+        "fp": 0,
+        "fn": 0
+      },
+      "raw_vs_guided_gap": {
+        "schema_validity_gap": 0.0,
+        "exact_match_gap": -0.0026525198938991967,
+        "field_precision_gap": -0.0016406249999999512,
+        "field_recall_gap": -0.0013802083333335213,
+        "field_f1_gap": -0.0015878652597406395,
+        "precision_gap": 0.0,
+        "recall_gap": 0.0,
+        "f1_gap": 0.0,
+        "null_accuracy_gap": 0.0,
+        "tp_gap": 0,
+        "tn_gap": 0,
+        "fp_gap": 0,
+        "fn_gap": 0
+      },
+      "pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.493368700265252,
+          "passed": false
+        },
+        "field_precision": {
+          "value": 0.8968601190476191,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.8811284722222229,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8848008302971545,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_pass_fail": {
+        "schema_validity": {
+          "value": 1.0,
+          "passed": true
+        },
+        "exact_match": {
+          "value": 0.4907161803713528,
+          "passed": true
+        },
+        "field_precision": {
+          "value": 0.8952194940476191,
+          "passed": true
+        },
+        "field_recall": {
+          "value": 0.8797482638888894,
+          "passed": true
+        },
+        "field_f1": {
+          "value": 0.8832129650374139,
+          "passed": true
+        },
+        "precision": {
+          "value": 1.0,
+          "passed": true
+        },
+        "recall": {
+          "value": 1.0,
+          "passed": true
+        },
+        "f1": {
+          "value": 1.0,
+          "passed": true
+        },
+        "null_accuracy": {
+          "value": 1.0,
+          "passed": true
+        }
+      },
+      "deployment_gate_mode": "constrained"
+    }
+  },
+  "regression": {
+    "passed": true,
+    "deltas": {
+      "mmlu_accuracy": {
+        "base": 0.3418803418803419,
+        "new": 0.46153846153846156,
+        "delta": 0.11965811965811968,
+        "passed": true
+      },
+      "hellaswag_accuracy": {
+        "base": 0.338,
+        "new": 0.378,
+        "delta": 0.03999999999999998,
+        "passed": true
+      }
+    },
+    "num_samples": 500
+  },
+  "ci_pass": true
+}

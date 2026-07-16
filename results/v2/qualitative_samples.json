@@ -1,0 +1,202 @@
+[
+  {
+    "model": "dpo",
+    "category": "hard",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nTechVision Industries, headquartered in San Francisco, announced it has completed its merger with DataCore Systems, based in Austin, Texas. The combined entity will operate under the TechVision name and maintain dual headquarters to serve both coasts more effectively.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"TechVision Industries\", \"type\": \"organization\", \"value\": \"TechVision Industries\"}, {\"name\": \"San Francisco\", \"type\": \"location\", \"value\": \"San Francisco\"}, {\"name\": \"DataCore Systems\", \"type\": \"organization\", \"value\": \"DataCore Systems\"}, {\"name\": \"Austin\", \"type\": \"location\", \"value\": \"Austin\"}, {\"name\": \"Texas\", \"type\": \"location\", \"value\": \"Texas\"}, {\"name\": \"TechVision\", \"type\": \"organization\", \"value\": \"TechVision\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"TechVision Industries\", \"type\": \"organization\", \"value\": \"TechVision Industries\"}, {\"name\": \"San Francisco\", \"type\": \"location\", \"value\": \"San Francisco\"}, {\"name\": \"DataCore Systems\", \"type\": \"organization\", \"value\": \"DataCore Systems\"}, {\"name\": \"Austin\", \"type\": \"location\", \"value\": \"Austin\"}, {\"name\": \"Texas\", \"type\": \"location\", \"value\": \"Texas\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "easy",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nSpain's unemployment rate dropped to 11.8% in the fourth quarter of 2024, marking the lowest level in over a decade. The country added 156,000 jobs during the period, driven primarily by growth in the tourism and construction sectors.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Spain\", \"type\": \"location\", \"value\": \"Spain\"}, {\"name\": \"11.8%\", \"type\": \"metric\", \"value\": \"11.8%\"}, {\"name\": \"fourth quarter of 2024\", \"type\": \"date\", \"value\": \"fourth quarter of 2024\"}, {\"name\": \"156,000 jobs\", \"type\": \"metric\", \"value\": \"156,000 jobs\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Spain\", \"type\": \"location\", \"value\": \"Spain\"}, {\"name\": \"11.8%\", \"type\": \"metric\", \"value\": \"11.8%\"}, {\"name\": \"fourth quarter of 2024\", \"type\": \"date\", \"value\": \"fourth quarter of 2024\"}, {\"name\": \"156,000 jobs\", \"type\": \"metric\", \"value\": \"156,000 jobs\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "null",
+    "is_null_case": true,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nDemocracy, at its core, represents the eternal struggle between individual liberty and collective responsibility. One might argue that true democratic participation requires citizens to transcend their personal interests, yet the very foundation of democratic systems seems to encourage the pursuit of self-interest. Perhaps the paradox itself is what keeps democracies vital.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": true, \"entities\": []}",
+    "prediction": "{\"null_extraction\": true, \"entities\": []}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "hard",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nThe European Parliament voted overwhelmingly to pass the Clean Air Directive 2024 on Wednesday, imposing strict emissions caps on industrial facilities across all member states. The regulation, which takes effect January 1, 2025, is expected to reduce particulate matter by 35% within five years.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"European Parliament\", \"type\": \"organization\", \"value\": \"European Parliament\"}, {\"name\": \"Clean Air Directive 2024\", \"type\": \"event\", \"value\": \"Clean Air Directive 2024\"}, {\"name\": \"Wednesday\", \"type\": \"date\", \"value\": \"Wednesday\"}, {\"name\": \"January 1, 2025\", \"type\": \"date\", \"value\": \"2025-01-01\"}, {\"name\": \"35%\", \"type\": \"metric\", \"value\": \"35%\"}, {\"name\": \"five years\", \"type\": \"metric\", \"value\": \"five years\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"European Parliament\", \"type\": \"organization\", \"value\": \"European Parliament\"}, {\"name\": \"Clean Air Directive 2024\", \"type\": \"event\", \"value\": \"Clean Air Directive 2024\"}, {\"name\": \"Wednesday\", \"type\": \"date\", \"value\": \"Wednesday\"}, {\"name\": \"January 1, 2025\", \"type\": \"date\", \"value\": \"2025-01-01\"}, {\"name\": \"35%\", \"type\": \"metric\", \"value\": \"35%\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "easy",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nCloudVault Technologies announced today that it has secured $47 million in Series B funding led by Sequoia Capital Partners, with participation from existing investors including Benchmark and Accel Ventures. The San Francisco-based data management startup plans to use the capital to expand its engineering team and accelerate product development.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"CloudVault Technologies\", \"type\": \"organization\", \"value\": \"CloudVault Technologies\"}, {\"name\": \"$47 million\", \"type\": \"metric\", \"value\": \"$47 million\"}, {\"name\": \"Sequoia Capital Partners\", \"type\": \"organization\", \"value\": \"Sequoia Capital Partners\"}, {\"name\": \"Benchmark\", \"type\": \"organization\", \"value\": \"Benchmark\"}, {\"name\": \"Accel Ventures\", \"type\": \"organization\", \"value\": \"Accel Ventures\"}, {\"name\": \"San Francisco\", \"type\": \"location\", \"value\": \"San Francisco\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"CloudVault Technologies\", \"type\": \"organization\", \"value\": \"CloudVault Technologies\"}, {\"name\": \"$47 million\", \"type\": \"metric\", \"value\": \"$47 million\"}, {\"name\": \"Sequoia Capital Partners\", \"type\": \"organization\", \"value\": \"Sequoia Capital Partners\"}, {\"name\": \"Benchmark\", \"type\": \"organization\", \"value\": \"Benchmark\"}, {\"name\": \"Accel Ventures\", \"type\": \"organization\", \"value\": \"Accel Ventures\"}, {\"name\": \"San Francisco\", \"type\": \"location\", \"value\": \"San Francisco\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "hard",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nRenowned actor Marcus Wellington announced the launch of his new foundation, the Wellington Education Initiative, which aims to provide scholarships to underprivileged students across Southeast Asia. The foundation has already secured $50 million in initial funding and plans to support 10,000 students over the next five years.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Marcus Wellington\", \"type\": \"person\", \"value\": \"Marcus Wellington\"}, {\"name\": \"Wellington Education Initiative\", \"type\": \"organization\", \"value\": \"Wellington Education Initiative\"}, {\"name\": \"Southeast Asia\", \"type\": \"location\", \"value\": \"Southeast Asia\"}, {\"name\": \"$50 million\", \"type\": \"metric\", \"value\": \"$50 million\"}, {\"name\": \"10,000 students\", \"type\": \"metric\", \"value\": \"10,000 students\"}, {\"name\": \"five years\", \"type\": \"metric\", \"value\": \"five years\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Marcus Wellington\", \"type\": \"person\", \"value\": \"Marcus Wellington\"}, {\"name\": \"Wellington Education Initiative\", \"type\": \"organization\", \"value\": \"Wellington Education Initiative\"}, {\"name\": \"Southeast Asia\", \"type\": \"location\", \"value\": \"Southeast Asia\"}, {\"name\": \"$50 million\", \"type\": \"metric\", \"value\": \"$50 million\"}, {\"name\": \"10,000 students\", \"type\": \"metric\", \"value\": \"10,000 students\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "null",
+    "is_null_case": true,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nDemocracy remains an ever-evolving concept, with theorists debating whether true democratic representation can ever truly exist in modern societies. Some argue that the inherent tensions between individual liberty and collective will make pure democracy impossible.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": true, \"entities\": []}",
+    "prediction": "{\"null_extraction\": true, \"entities\": []}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "easy",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nTechVenture AI, a machine learning startup based in San Francisco, announced today that it has raised $45M in Series B funding led by Horizon Partners. The round will be used to expand the company's engineering team and accelerate product development.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"TechVenture AI\", \"type\": \"organization\", \"value\": \"TechVenture AI\"}, {\"name\": \"San Francisco\", \"type\": \"location\", \"value\": \"San Francisco\"}, {\"name\": \"$45M\", \"type\": \"metric\", \"value\": \"$45M\"}, {\"name\": \"Horizon Partners\", \"type\": \"organization\", \"value\": \"Horizon Partners\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"TechVenture AI\", \"type\": \"organization\", \"value\": \"TechVenture AI\"}, {\"name\": \"San Francisco\", \"type\": \"location\", \"value\": \"San Francisco\"}, {\"name\": \"$45M\", \"type\": \"metric\", \"value\": \"$45M\"}, {\"name\": \"Horizon Partners\", \"type\": \"organization\", \"value\": \"Horizon Partners\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "easy",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nThe Riverside Rangers captured their third consecutive championship title yesterday, defeating the Mountain Hawks 3-2 in a thrilling playoff series that went to the final game. With this victory, the Rangers secured the National Athletic League crown and a $2.5M prize purse.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Riverside Rangers\", \"type\": \"organization\", \"value\": \"Riverside Rangers\"}, {\"name\": \"Mountain Hawks\", \"type\": \"organization\", \"value\": \"Mountain Hawks\"}, {\"name\": \"National Athletic League\", \"type\": \"organization\", \"value\": \"National Athletic League\"}, {\"name\": \"$2.5M\", \"type\": \"metric\", \"value\": \"$2.5M\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Riverside Rangers\", \"type\": \"organization\", \"value\": \"Riverside Rangers\"}, {\"name\": \"Mountain Hawks\", \"type\": \"organization\", \"value\": \"Mountain Hawks\"}, {\"name\": \"National Athletic League\", \"type\": \"event\", \"value\": \"National Athletic League\"}, {\"name\": \"$2.5M\", \"type\": \"metric\", \"value\": \"$2.5M\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "easy",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nThe Federal Reserve's policy committee announced today that it is holding the benchmark interest rate steady at 4.75%, citing persistent inflation concerns and mixed economic signals. The decision came after a two-day meeting in Washington, where officials debated the timing of potential rate cuts.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Federal Reserve\", \"type\": \"organization\", \"value\": \"Federal Reserve\"}, {\"name\": \"4.75%\", \"type\": \"metric\", \"value\": \"4.75%\"}, {\"name\": \"Washington\", \"type\": \"location\", \"value\": \"Washington\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Federal Reserve\", \"type\": \"organization\", \"value\": \"Federal Reserve\"}, {\"name\": \"4.75%\", \"type\": \"metric\", \"value\": \"4.75%\"}, {\"name\": \"Washington\", \"type\": \"location\", \"value\": \"Washington\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "null",
+    "is_null_case": true,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nEducation in the 21st century has never been more critical as societies grapple with rapid technological change and evolving workforce demands. Experts argue that fostering critical thinking and adaptability should be at the heart of modern curricula, rather than rote memorization.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": true, \"entities\": []}",
+    "prediction": "{\"null_extraction\": true, \"entities\": []}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "hard",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nResearchers at the Institute for Advanced Biological Sciences announced a groundbreaking discovery in cellular regeneration on Tuesday, revealing a new technique that could accelerate tissue repair by up to 340%. The findings, published in the journal Nature Biotechnology, were led by Dr. Margaret Chen's team over a period of 18 months.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Institute for Advanced Biological Sciences\", \"type\": \"organization\", \"value\": \"Institute for Advanced Biological Sciences\"}, {\"name\": \"Tuesday\", \"type\": \"date\", \"value\": \"Tuesday\"}, {\"name\": \"Nature Biotechnology\", \"type\": \"organization\", \"value\": \"Nature Biotechnology\"}, {\"name\": \"Dr. Margaret Chen\", \"type\": \"person\", \"value\": \"Dr. Margaret Chen\"}, {\"name\": \"up to 340%\", \"type\": \"metric\", \"value\": \"up to 340%\"}, {\"name\": \"18 months\", \"type\": \"metric\", \"value\": \"18 months\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Institute for Advanced Biological Sciences\", \"type\": \"organization\", \"value\": \"Institute for Advanced Biological Sciences\"}, {\"name\": \"Tuesday\", \"type\": \"date\", \"value\": \"Tuesday\"}, {\"name\": \"340%\", \"type\": \"metric\", \"value\": \"340%\"}, {\"name\": \"Nature Biotechnology\", \"type\": \"organization\", \"value\": \"Nature Biotechnology\"}, {\"name\": \"Dr. Margaret Chen\", \"type\": \"person\", \"value\": \"Dr. Margaret Chen\"}, {\"name\": \"18 months\", \"type\": \"metric\", \"value\": \"18 months\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "null",
+    "is_null_case": true,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nEducation in the modern era has become more critical than ever before. As society continues to evolve at a rapid pace, the ability to adapt and learn becomes paramount. Without a strong educational foundation, individuals struggle to keep pace with technological and social changes.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": true, \"entities\": []}",
+    "prediction": "{\"null_extraction\": true, \"entities\": []}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "hard",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nTechHome Electronics issued a voluntary recall of 50,000 units of their ModelX smart thermostat on March 14, 2024, citing potential overheating issues that could pose a fire risk. The company, based in Portland, Oregon, has instructed customers to stop using the devices immediately and contact their support center for a full refund or replacement.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"TechHome Electronics\", \"type\": \"organization\", \"value\": \"TechHome Electronics\"}, {\"name\": \"50,000 units\", \"type\": \"metric\", \"value\": \"50,000 units\"}, {\"name\": \"ModelX\", \"type\": \"event\", \"value\": \"ModelX\"}, {\"name\": \"March 14, 2024\", \"type\": \"date\", \"value\": \"2024-03-14\"}, {\"name\": \"Portland, Oregon\", \"type\": \"location\", \"value\": \"Portland, Oregon\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"TechHome Electronics\", \"type\": \"organization\", \"value\": \"TechHome Electronics\"}, {\"name\": \"50,000 units\", \"type\": \"metric\", \"value\": \"50,000 units\"}, {\"name\": \"ModelX\", \"type\": \"event\", \"value\": \"ModelX\"}, {\"name\": \"March 14, 2024\", \"type\": \"date\", \"value\": \"2024-03-14\"}, {\"name\": \"Portland\", \"type\": \"location\", \"value\": \"Portland\"}, {\"name\": \"Oregon\", \"type\": \"location\", \"value\": \"Oregon\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "easy",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nThe defense ministers of France and Germany signed a comprehensive military cooperation agreement in Berlin on March 14, 2024, pledging to strengthen joint defense capabilities and increase annual defense spending by 3.5% over the next five years.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"France\", \"type\": \"location\", \"value\": \"France\"}, {\"name\": \"Germany\", \"type\": \"location\", \"value\": \"Germany\"}, {\"name\": \"Berlin\", \"type\": \"location\", \"value\": \"Berlin\"}, {\"name\": \"March 14, 2024\", \"type\": \"date\", \"value\": \"2024-03-14\"}, {\"name\": \"3.5%\", \"type\": \"metric\", \"value\": \"3.5%\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"France\", \"type\": \"location\", \"value\": \"France\"}, {\"name\": \"Germany\", \"type\": \"location\", \"value\": \"Germany\"}, {\"name\": \"Berlin\", \"type\": \"location\", \"value\": \"Berlin\"}, {\"name\": \"March 14, 2024\", \"type\": \"date\", \"value\": \"2024-03-14\"}, {\"name\": \"3.5%\", \"type\": \"metric\", \"value\": \"3.5%\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "hard",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nThe United States and South Korea finalized a comprehensive trade agreement on March 14, 2024, expected to increase bilateral commerce by $8.5 billion annually. The deal eliminates tariffs on agricultural products and technology exports, marking the first major trade revision between the two nations in over a decade.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"The United States\", \"type\": \"location\", \"value\": \"The United States\"}, {\"name\": \"South Korea\", \"type\": \"location\", \"value\": \"South Korea\"}, {\"name\": \"March 14, 2024\", \"type\": \"date\", \"value\": \"2024-03-14\"}, {\"name\": \"$8.5 billion annually\", \"type\": \"metric\", \"value\": \"$8.5 billion annually\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"The United States\", \"type\": \"location\", \"value\": \"The United States\"}, {\"name\": \"South Korea\", \"type\": \"location\", \"value\": \"South Korea\"}, {\"name\": \"March 14, 2024\", \"type\": \"date\", \"value\": \"2024-03-14\"}, {\"name\": \"$8.5 billion\", \"type\": \"metric\", \"value\": \"$8.5 billion\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "easy",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nThe 2024 Pinnacle Awards ceremony held last night at the Grand Metropolitan Hotel in Chicago recognized exceptional talent across multiple disciplines. Margaret Chen from Stellar Innovations won the Technology Leadership award, while the Environmental Impact prize went to the Greenwater Foundation, and emerging filmmaker David Okonkwo received the Creative Excellence honor.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"2024 Pinnacle Awards\", \"type\": \"event\", \"value\": \"2024 Pinnacle Awards\"}, {\"name\": \"Grand Metropolitan Hotel\", \"type\": \"location\", \"value\": \"Grand Metropolitan Hotel\"}, {\"name\": \"Chicago\", \"type\": \"location\", \"value\": \"Chicago\"}, {\"name\": \"Margaret Chen\", \"type\": \"person\", \"value\": \"Margaret Chen\"}, {\"name\": \"Stellar Innovations\", \"type\": \"organization\", \"value\": \"Stellar Innovations\"}, {\"name\": \"Greenwater Foundation\", \"type\": \"organization\", \"value\": \"Greenwater Foundation\"}, {\"name\": \"David Okonkwo\", \"type\": \"person\", \"value\": \"David Okonkwo\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"2024 Pinnacle Awards\", \"type\": \"event\", \"value\": \"2024 Pinnacle Awards\"}, {\"name\": \"Grand Metropolitan Hotel\", \"type\": \"location\", \"value\": \"Grand Metropolitan Hotel\"}, {\"name\": \"Chicago\", \"type\": \"location\", \"value\": \"Chicago\"}, {\"name\": \"Margaret Chen\", \"type\": \"person\", \"value\": \"Margaret Chen\"}, {\"name\": \"Stellar Innovations\", \"type\": \"organization\", \"value\": \"Stellar Innovations\"}, {\"name\": \"Greenwater Foundation\", \"type\": \"organization\", \"value\": \"Greenwater Foundation\"}, {\"name\": \"David Okonkwo\", \"type\": \"person\", \"value\": \"David Okonkwo\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "hard",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nThe NATO defense ministers met in Brussels on March 14 to finalize a new mutual defense pact with enhanced security commitments. Under the agreement, member states pledged to increase military spending by 3.5% annually over the next decade.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"NATO\", \"type\": \"organization\", \"value\": \"NATO\"}, {\"name\": \"Brussels\", \"type\": \"location\", \"value\": \"Brussels\"}, {\"name\": \"March 14\", \"type\": \"date\", \"value\": \"March 14\"}, {\"name\": \"3.5%\", \"type\": \"metric\", \"value\": \"3.5%\"}, {\"name\": \"next decade\", \"type\": \"date\", \"value\": \"next decade\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"NATO\", \"type\": \"organization\", \"value\": \"NATO\"}, {\"name\": \"Brussels\", \"type\": \"location\", \"value\": \"Brussels\"}, {\"name\": \"March 14\", \"type\": \"date\", \"value\": \"2024-03-14\"}, {\"name\": \"3.5%\", \"type\": \"metric\", \"value\": \"3.5%\"}, {\"name\": \"ten years\", \"type\": \"metric\", \"value\": \"ten years\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "hard",
+    "is_null_case": false,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nIn a landmark decision, Judge Patricia Caldwell ruled that the merger between TechCore Industries and DataFlow Systems violated antitrust regulations and must be dissolved within 90 days. The ruling, issued in the Federal District Court of California on March 22, 2024, marks a significant victory for consumer advocacy groups.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Judge Patricia Caldwell\", \"type\": \"person\", \"value\": \"Judge Patricia Caldwell\"}, {\"name\": \"TechCore Industries\", \"type\": \"organization\", \"value\": \"TechCore Industries\"}, {\"name\": \"DataFlow Systems\", \"type\": \"organization\", \"value\": \"DataFlow Systems\"}, {\"name\": \"90 days\", \"type\": \"metric\", \"value\": \"90 days\"}, {\"name\": \"Federal District Court of California\", \"type\": \"location\", \"value\": \"Federal District Court of California\"}, {\"name\": \"March 22, 2024\", \"type\": \"date\", \"value\": \"2024-03-22\"}]}",
+    "prediction": "{\"null_extraction\": false, \"entities\": [{\"name\": \"Patricia Caldwell\", \"type\": \"person\", \"value\": \"Patricia Caldwell\"}, {\"name\": \"TechCore Industries\", \"type\": \"organization\", \"value\": \"TechCore Industries\"}, {\"name\": \"DataFlow Systems\", \"type\": \"organization\", \"value\": \"DataFlow Systems\"}, {\"name\": \"Federal District Court of California\", \"type\": \"location\", \"value\": \"Federal District Court of California\"}, {\"name\": \"March 22, 2024\", \"type\": \"date\", \"value\": \"2024-03-22\"}]}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  },
+  {
+    "model": "dpo",
+    "category": "null",
+    "is_null_case": true,
+    "prompt": "<|im_start|>system\nYou are a precise JSON extractor. Extract structured data according to the schema. If no extractable data is present, respond with {\"null_extraction\": true}.\n<|im_end|>\n<|im_start|>user\nSocial media has fundamentally altered how we experience community and belonging in ways we're still struggling to understand. Critics argue it creates echo chambers that reinforce our existing beliefs, while others contend that digital connectivity enables unprecedented forms of human expression and solidarity across geographical boundaries.\n<|im_end|>\n<|im_start|>assistant\n",
+    "reference": "{\"null_extraction\": true, \"entities\": []}",
+    "prediction": "{\"null_extraction\": true, \"entities\": []}",
+    "schema_valid": true,
+    "correct_null_prediction": true
+  }
+]
