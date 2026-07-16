@@ -145,7 +145,7 @@ EXIT_CODE=$?
 # ── Upload results ────────────────────────────────────────────────────────────
 if [[ $EXIT_CODE -eq 0 && -f "$METRICS_PATH" ]]; then
     log "Uploading metrics.json to S3"
-    aws s3 cp "$METRICS_PATH" "s3://llm-specialization-artifacts/artifacts/eval/metrics.json" \
+    aws s3 cp "$METRICS_PATH" "s3://llm-specialization-artifacts/v2/artifacts/eval/metrics.json" \
         && log "Uploaded metrics.json" \
         || log "WARNING: S3 upload failed (results saved locally)"
 fi

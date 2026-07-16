@@ -13,7 +13,20 @@ class VLLMProvider:
         host = cfg.get("host", "localhost")
         port = cfg.get("port", 8000)
         self._completions_url = f"http://{host}:{port}/v1/completions"
-        self._model_path = model_path
+        # The server registers its model under the exact string it was launched
+        # with (often an absolute path); a config-relative path 404s. Ask the
+        # server what it serves rather than assuming.
+        self._model_path = self._served_model_id(host, port) or model_path
+
+    @staticmethod
+    def _served_model_id(host: str, port: int) -> str | None:
+        try:
+            with urllib.request.urlopen(f"http://{host}:{port}/v1/models", timeout=10) as resp:
+                data = json.loads(resp.read())
+            models = data.get("data", [])
+            return models[0]["id"] if models else None
+        except Exception:
+            return None
 
     def _post(self, payload: dict) -> dict:
         data = json.dumps(payload).encode()
